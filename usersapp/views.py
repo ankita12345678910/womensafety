@@ -6,3 +6,7 @@ from django.http import HttpResponse
 
 def manageUser(request):
     return HttpResponse("manage user")
+
+
+def requestOwner(request):
+     return render(request, 'users/owner_request.html')
