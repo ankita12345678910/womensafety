@@ -24,4 +24,8 @@ __pycache__/
 # **/static/
 **/media/
 
+/static/logos/*
+!static/logos/logo.png
+!static/logos/camera.jpg
+
 safe_env/

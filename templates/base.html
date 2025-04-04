@@ -17,11 +17,11 @@
     <header>
         <!-- Main Navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" 
-             style="width: 100%;height: 100px; position: fixed; top: 0; left: 0; z-index: 1000;">
+             style="width: 100%;height: 55px; position: fixed; top: 0; left: 0; z-index: 1000;">
             <div class="container-fluid">
                 <!-- Logo on the left side -->
                 <a href="#" class="navbar-brand">
-                    <img src="" alt="Logo" style="height: 90px;">
+                    <img src="{% static 'logos/logo.png' %}" alt="Logo" style="height: 50px;">
                 </a>
     
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -31,7 +31,7 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
                         <li class="nav-item"><a class="nav-link" href="#">About</a></li>
                         <li class="nav-item"><a class="nav-link" href="#">Services</a></li>
                         <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>

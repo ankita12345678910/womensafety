@@ -8,5 +8,9 @@ def manageUser(request):
     return HttpResponse("manage user")
 
 
+def homePage(request):
+    return render(request, 'home/index.html')
+
+
 def requestOwner(request):
-     return render(request, 'users/owner_request.html')
+    return render(request, 'users/owner_request.html')
