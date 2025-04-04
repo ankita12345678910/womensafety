@@ -1,21 +1,81 @@
 {% extends 'base.html' %}
 
 {% block title %}
-{{ block.super }} - cancel schedule
-{% endblock %}
-
-{% block stylesheets %}
-{{ block.super }}
+{{ block.super }} - Owner Request
 {% endblock %}
 
 {% block content %}
-<div class="container py-5 m-5">
+<div class="container py-5">
+    <div class="row justify-content-center py-4">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header text-white text-center rounded-top" style="background-color: rgb(55, 98, 143);">
+                    <h4 class="mb-0">Owner Request Form</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
 
-    <h1 class="m-5">Heloooooooo vvvvvvvv</h1>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label fw-semibold">First Name</label>
+                                <input type="text" id="first_name" name="first_name" class="form-control"
+                                    placeholder="Enter first name" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label fw-semibold">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" class="form-control"
+                                    placeholder="Enter last name" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label fw-semibold">Email</label>
+                                <input type="email" id="email" name="email" class="form-control"
+                                    placeholder="Enter email" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label fw-semibold">Phone</label>
+                                <input type="text" id="phone" name="phone" class="form-control"
+                                    placeholder="Enter phone number" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="business_details" class="form-label fw-semibold">Business Details</label>
+                            <textarea id="business_details" name="business_details" class="form-control" rows="3"
+                                placeholder="Provide business details (optional)"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label fw-semibold">Address</label>
+                            <textarea id="address" name="address" class="form-control" rows="3"
+                                placeholder="Enter full address" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="invoice" class="form-label fw-semibold">Invoice</label>
+                            <input type="file" id="invoice" name="invoice" class="form-control" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-lg fw-semibold" style="background-color: rgb(26, 45, 66);color: white;">
+                                Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light py-3">
+                    <p class="mb-0">
+                        Already an owner?
+                        <a href="" class="fw-semibold text-primary">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
-
-{% block javascript %}
-{{ block.super }}
-{% endblock %}
- 
