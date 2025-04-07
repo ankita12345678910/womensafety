@@ -8,7 +8,12 @@ from .models import OwnerRequests
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import connection
+from django.contrib.auth.decorators import login_required
 # Create your views here.
+
+@login_required
+def adminDashboard(request):
+    return render(request, 'users/admin_dashboard.html')
 
 
 def manageUser(request, id=None):
@@ -107,3 +112,9 @@ def requestOwner(request):
                 request, 'This email is already used,try with another email!')
 
     return render(request, 'users/owner_request.html')
+
+def listOwnerRequest(request):
+    all_requests = OwnerRequests.objects.all()
+    return render(request,"users/list_owner_request.html",{
+        'all_requests':all_requests
+    })
