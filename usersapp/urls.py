@@ -9,4 +9,6 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('dashboard/', views.adminDashboard, name='dashboard'),
     path('list/request/owner', views.listOwnerRequest, name='list_request'),
+    path('ajax/fetch/owner/data/<id>', views.getOwnerDetailsByAjax, name='ajax_fetch_owner_data'),
+    path('ajax/update/owner/status/<int:id>/<str:status>/', views.updateOwnerStatus, name='ajax_update_owner_status'),
 ]

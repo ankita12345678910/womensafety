@@ -1,3 +1,4 @@
+from usersapp.models import OwnerRequests
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 import os
@@ -9,7 +10,11 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import connection
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.core.mail import send_mail
+
 # Create your views here.
+
 
 @login_required
 def adminDashboard(request):
@@ -113,8 +118,87 @@ def requestOwner(request):
 
     return render(request, 'users/owner_request.html')
 
+
 def listOwnerRequest(request):
     all_requests = OwnerRequests.objects.all()
-    return render(request,"users/list_owner_request.html",{
-        'all_requests':all_requests
+    return render(request, "users/list_owner_request.html", {
+        'all_requests': all_requests
     })
+
+
+def getOwnerDetailsByAjax(request, id):
+    try:
+        owner = OwnerRequests.objects.get(id=id)
+        html = render(request, 'partials/owner_modal_content.html',
+                      {'owner': owner}).content.decode('utf-8')
+        return JsonResponse({'html': html, 'current_status': owner.status})
+    except OwnerRequests.DoesNotExist:
+        return JsonResponse({'html': '<p class="text-danger">Owner not found.</p>'})
+
+
+def updateOwnerStatus(request, id, status):
+    try:
+        owner = OwnerRequests.objects.get(id=id)
+
+        if status == 'approved':
+            # Create user
+            user = User.objects.create_user(
+                username=owner.email,
+                email=owner.email,
+                password='1234',
+                first_name=owner.first_name,
+                last_name=owner.last_name,
+            )
+            cursor = connection.cursor()
+            cursor.execute("""
+                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
+            """, ["owner", owner.phone, owner.address, user.id])
+
+            # mail sending code
+
+            subject = "Your Owner Account Has Been Approved"
+            message = f"""
+            Hello {owner.first_name},
+
+            Your request to become an Owner has been approved!
+
+            Username: {owner.email}
+            Temporary Password: 1234
+
+            Please login using this link:  
+            🔗 http://127.0.0.1:8000/login/
+
+            After login, make sure to change your password from your dashboard.
+
+            Best regards,  
+            Women Safety Team
+            """
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [owner.email],
+                fail_silently=False,
+            )
+            # Delete from OwnerRequests
+            owner.delete()
+
+            return JsonResponse({
+                'success': True,
+                'status': status,
+                'message': 'Owner approved and credentials sent!'
+            })
+
+        else:
+            # Rejected or other status update
+            owner.status = status
+            owner.save()
+
+            return JsonResponse({
+                'success': True,
+                'status': status,
+                'message': f"Request has been {status} successfully."
+            })
+
+    except OwnerRequests.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Owner request not found'}, status=404)
