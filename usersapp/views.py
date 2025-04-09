@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 # Create your views here.
 
@@ -33,42 +34,39 @@ def manageUser(request, id=None):
 
     if request.method == 'POST':
         email = request.POST.get('email')
-        # password = request.POST.get('password')
         fname = request.POST.get('first_name')
         lname = request.POST.get('last_name')
         phone = request.POST.get('phone')
         role = request.POST.get('role')
         address = request.POST.get('address')
-
         if is_edit:
             user.first_name = fname
             user.last_name = lname
             user.email = email
             user.username = email
-            # if password:
-            #     user.set_password(password)
             user.save()
-            msg = 'User updated successfully.'
+
+            cursor = connection.cursor()
+            cursor.execute("""
+                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
+            """, [user.role, phone, address, user.id])
+
+            return JsonResponse({
+                'message': 'User updated successfully.',
+                'redirect_url': reverse('list_users')  # 👈 Redirect after edit
+            })
         else:
             user = User.objects.create_user(
                 username=email, email=email, password=phone,
                 first_name=fname, last_name=lname
             )
 
-        # Update extra fields
-        cursor = connection.cursor()
-        cursor.execute("""
-            UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
-        """, [role, phone, address, user.id])
+            # Update extra fields
+            cursor = connection.cursor()
+            cursor.execute("""
+                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
+            """, [role, phone, address, user.id])
 
-        if is_edit:
-            user = User.objects.raw(
-                "SELECT * FROM auth_user WHERE id = %s", [user.id])[0]
-            html = render_to_string("users/manage_user_form_inner.html", {
-                'target_user': user,
-                'button_text': 'Update'
-            }, request=request)
-        else:
             msg = 'User created successfully.'
             subject = "Your Owner Account Has Been Created"
             message = f"""
@@ -86,7 +84,7 @@ def manageUser(request, id=None):
 
             Best regards,  
             Women Safety Team
-                    """
+            """
             send_mail(
                 subject,
                 message,
@@ -94,11 +92,16 @@ def manageUser(request, id=None):
                 [user.email],
                 fail_silently=False,
             )
+
             html = render_to_string("users/manage_user_form_inner.html", {
                 'target_user': None,
                 'button_text': 'Add'
             }, request=request)
-        return JsonResponse({'message': msg, 'html': html})
+
+            return JsonResponse({
+                'message': msg,
+                'html': html
+            })
 
     # GET request: render full page
     button_text = "Update" if is_edit else "Add"
@@ -248,3 +251,7 @@ def updateOwnerStatus(request, id, status):
 
     except OwnerRequests.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Owner request not found'}, status=404)
+
+def listUsers(request):
+    users = User.objects.raw("SELECT * FROM auth_user WHERE role IN ('admin', 'owner') and is_active=1 ORDER BY date_joined DESC")
+    return render(request, 'users/list_user.html', {'users': users})

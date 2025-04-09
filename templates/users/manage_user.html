@@ -1,7 +1,7 @@
 {% extends 'user_base.html' %}
 
 {% block title %}
-{{ block.super }} {{button_text}}
+{{ block.super }} {{button_text}} user
 {% endblock %}
 {% block stylesheets %}
 {{ block.super }}
@@ -41,7 +41,11 @@
                         text: response.message,
                         confirmButtonColor: '#3085d6'
                     }).then(() => {
-                        $('#manage_user_form').html(response.html);  // reload form div only
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            $('#manage_user_form').html(response.html);  // For add
+                        }
                     });
                 },
                 error: function (xhr, status, error) {

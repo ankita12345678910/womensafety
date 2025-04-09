@@ -1,0 +1,79 @@
+{% extends 'user_base.html' %}
+
+{% block title %}
+{{ block.super }}User list
+{% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Page Heading -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h3 class="text-dark fw-bold">User List</h3>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'manage_user' -1 %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i> Add User
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <!-- Table with responsive scroll -->
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle mb-0">
+                    <thead class="table-primary text-center">
+                        <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col">Address</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in users %}
+                        <tr>
+                            <td class="text-center">{{ data.id }}</td>
+                            <td>{{ data.first_name }} {{ data.last_name }}</td>
+                            <td>{{ data.email }}</td>
+                            <td>{{ data.phone_number }}</td>
+                            <td>{{ data.address }}</td>
+                            <td>{{ data.role }}</td>
+                            <td class="text-center">
+                                <a href="#" title="View" class="btn btn-sm btn-outline-info ms-2">
+                                    <i class="fa fa-eye"style="width: 18px;"></i>
+                                </a>
+                                <a href="{% url 'manage_user' data.id %}" title="Edit" class="btn btn-sm btn-outline-warning ms-2">
+                                    <i class="fa fa-pen"style="width: 18px;"></i>
+                                </a>
+                                {% if request.user.id is not data.id %}
+                                <a href="#" title="Delete" class="btn btn-sm btn-outline-danger ms-2">
+                                    <i class="fa fa-trash"style="width: 18px;"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-3">No users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+{% endblock %}
