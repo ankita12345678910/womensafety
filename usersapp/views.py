@@ -12,6 +12,8 @@ from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
 
 # Create your views here.
 
@@ -21,15 +23,17 @@ def adminDashboard(request):
     return render(request, 'users/admin_dashboard.html')
 
 
+@login_required(login_url='login')
 def manageUser(request, id=None):
     is_edit = id and int(id) != -1
     user = None
+
     if is_edit:
-        title = "Edit user"
-        user = User.objects.raw("select * from auth_user where id=%s", [id])[0]
+        user = User.objects.raw("SELECT * FROM auth_user WHERE id=%s", [id])[0]
+
     if request.method == 'POST':
         email = request.POST.get('email')
-        password = request.POST.get('password')
+        # password = request.POST.get('password')
         fname = request.POST.get('first_name')
         lname = request.POST.get('last_name')
         phone = request.POST.get('phone')
@@ -41,16 +45,15 @@ def manageUser(request, id=None):
             user.last_name = lname
             user.email = email
             user.username = email
-            if password:
-                user.set_password(password)
+            # if password:
+            #     user.set_password(password)
             user.save()
             msg = 'User updated successfully.'
         else:
             user = User.objects.create_user(
-                username=email, email=email, password=password,
+                username=email, email=email, password=phone,
                 first_name=fname, last_name=lname
             )
-            msg = 'User created successfully.'
 
         # Update extra fields
         cursor = connection.cursor()
@@ -58,11 +61,49 @@ def manageUser(request, id=None):
             UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
         """, [role, phone, address, user.id])
 
-        messages.success(request, msg)
+        if is_edit:
+            user = User.objects.raw(
+                "SELECT * FROM auth_user WHERE id = %s", [user.id])[0]
+            html = render_to_string("users/manage_user_form_inner.html", {
+                'target_user': user,
+                'button_text': 'Update'
+            }, request=request)
+        else:
+            msg = 'User created successfully.'
+            subject = "Your Owner Account Has Been Created"
+            message = f"""
+            Hello {user.first_name},
 
+            An account has been created for you as an Owner on the Women Safety Platform.
+
+            Username: {user.email}
+            Temporary Password: {phone}
+
+            Please login using this link:
+            🔗 http://127.0.0.1:8000/login/
+
+            After login, make sure to change your password from your dashboard.
+
+            Best regards,  
+            Women Safety Team
+                    """
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            html = render_to_string("users/manage_user_form_inner.html", {
+                'target_user': None,
+                'button_text': 'Add'
+            }, request=request)
+        return JsonResponse({'message': msg, 'html': html})
+
+    # GET request: render full page
     button_text = "Update" if is_edit else "Add"
     return render(request, "users/manage_user.html", {
-        'user': user,
+        'target_user': user,
         'button_text': button_text
     })
 
@@ -74,47 +115,52 @@ def homePage(request):
 def requestOwner(request):
     if request.method == "POST":
         email_id = request.POST.get('email')
-        exist_user = OwnerRequests.objects.filter(email=email_id)
-        if exist_user is None:
-            exist_user = User.objects.get(username=email_id)
-            if exist_user is None:
 
-                fname = request.POST.get('first_name')
-                lname = request.POST.get('last_name')
-                phone = request.POST.get('phone')
-                business = request.POST.get('business_details')
-                address = request.POST.get('address')
-                invoice_file = request.FILES.get('invoice')
-                invoice_dir = os.path.join(settings.MEDIA_ROOT, 'invoices')
-                custom_filename = str(int(uuid.uuid4().hex[:5], 16) % 100000).zfill(
-                    5)+"-"+invoice_file.name
-                file_path = os.path.join(invoice_dir, custom_filename)
-                fs = FileSystemStorage(location=invoice_dir)
-                filename = fs.save(custom_filename, invoice_file)
-                file_url = fs.url(filename)
-                if os.path.exists(file_path):
-                    owner_request = OwnerRequests.objects.create(
-                        first_name=fname,
-                        last_name=lname,
-                        email=email_id,
-                        phone=phone,
-                        business_details=business,
-                        address=address,
-                        invoice=filename
-                    )
-                    messages.success(
-                        request, 'Your request has been submitted successfully!')
-                else:
-                    messages.error(
-                        request, 'Failed to upload the invoice. Please try again.')
+        # Check if email already exists in OwnerRequests
+        if OwnerRequests.objects.filter(email=email_id).exists():
+            messages.error(
+                request, 'This email is already used, try with another email!')
+            return redirect('owner_request')
 
-                return redirect('owner_request')
-            else:
-                messages.error(
-                    request, 'This email is already used,try with another email!')
+        # Check if email already exists as a User
+        if User.objects.filter(username=email_id).exists():
+            messages.error(
+                request, 'This email is already used, try with another email!')
+            return redirect('owner_request')
+
+        # Process request
+        fname = request.POST.get('first_name')
+        lname = request.POST.get('last_name')
+        phone = request.POST.get('phone')
+        business = request.POST.get('business_details')
+        address = request.POST.get('address')
+        invoice_file = request.FILES.get('invoice')
+
+        invoice_dir = os.path.join(settings.MEDIA_ROOT, 'invoices')
+        custom_filename = str(int(uuid.uuid4().hex[:5], 16) % 100000).zfill(
+            5) + "-" + invoice_file.name
+        file_path = os.path.join(invoice_dir, custom_filename)
+
+        fs = FileSystemStorage(location=invoice_dir)
+        filename = fs.save(custom_filename, invoice_file)
+
+        if os.path.exists(file_path):
+            owner_request = OwnerRequests.objects.create(
+                first_name=fname,
+                last_name=lname,
+                email=email_id,
+                phone=phone,
+                business_details=business,
+                address=address,
+                invoice=filename
+            )
+            messages.success(
+                request, 'Your request has been submitted successfully!')
         else:
             messages.error(
-                request, 'This email is already used,try with another email!')
+                request, 'Failed to upload the invoice. Please try again.')
+
+        return redirect('owner_request')
 
     return render(request, 'users/owner_request.html')
 

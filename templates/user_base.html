@@ -77,18 +77,30 @@
 
                 <li>
                     <a href="{% url 'dashboard' %}" class="nav-link link-light">
-                        <i class="fas fa-calendar-check me-2"></i> Dashboard
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                     </a>
                 </li>
                 <li>
                     <a href="{% url 'list_request' %}" class="nav-link link-light">
-                        <i class="fas fa-calendar-check me-2"></i>Requested Owner
+                        <i class="fas fa-user-check me-2"></i>Requested Owner
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link link-light">
-                        <i class="fas fa-calendar-alt me-2"></i> Manage User
-                    </a>
+                    <span class="nav-link link-light">
+                        <i class="fas fa-users-cog me-2"></i> Manage User
+                    </span>
+                    <ul class="nav flex-column ms-3">
+                        <li class="nav-item">
+                            <a href="{% url 'manage_user' -1 %}" class="nav-link link-light">
+                                <i class="fas fa-user me-2"></i> Add User
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link link-light">
+                                <i class="fas fa-list me-2"></i> List User
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li>
                     <a href="#" class="nav-link link-light">
@@ -125,6 +137,16 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     {% endblock %}
+    <div id="ajax-loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+     background-color: rgba(0, 0, 0, 0.5); z-index: 1050; display: none; align-items: center; justify-content: center;">
+
+    <div class="text-center">
+        <div class="spinner-border text-light" style="width: 4rem; height: 4rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="text-light mt-3 fw-semibold">Processing...</div>
+    </div>
+</div>
 </body>
 
 </html>

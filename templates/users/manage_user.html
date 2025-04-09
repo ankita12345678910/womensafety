@@ -1,7 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'user_base.html' %}
 
 {% block title %}
-{{ block.super }} - {{ button_text }}
+{{ block.super }} {{button_text}}
+{% endblock %}
+{% block stylesheets %}
+{{ block.super }}
 {% endblock %}
 
 {% block content %}
@@ -9,72 +12,8 @@
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
             <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h3 class="text-center mb-4 fw-bold text-white py-2 rounded-3" style="background-color: #375889;">
-                        Create Your Account
-                    </h3>
-                    <form method="POST" action="">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label fw-semibold">First Name</label>
-                                <input type="text" id="first_name" name="first_name" class="form-control" required
-                                    value="{{ user.first_name|default_if_none:'' }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="last_name" class="form-label fw-semibold">Last Name</label>
-                                <input type="text" id="last_name" name="last_name" class="form-control" required
-                                    value="{{ user.last_name|default_if_none:'' }}">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label fw-semibold">Phone</label>
-                                <input type="text" id="phone" name="phone" class="form-control" required
-                                    value="{{ user.phone_number|default_if_none:'' }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label fw-semibold">Email</label>
-                                <input type="email" id="email" name="email" class="form-control" required
-                                    value="{{ user.email|default_if_none:'' }}">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="address" class="form-label fw-semibold">Address</label>
-                            <textarea id="address" name="address" class="form-control" rows="2"
-                                required>{{ user.address|default_if_none:'' }}</textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="role" class="form-label fw-semibold">Role</label>
-                            <select id="role" name="role" class="form-select" required>
-                                <option value="" disabled {% if not user or not user.role %}selected{% endif %}>Select role</option>
-                                <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
-                                <option value="owner" {% if user.role == "owner" %}selected{% endif %}>Owner</option>
-                                <option value="viewer" {% if user.role == "viewer" %}selected{% endif %}>Viewer</option>
-                            </select>
-                        </div>
-                        
-
-                        <div class="mb-4">
-                            <label for="password" class="form-label fw-semibold">
-                                Password {% if button_text == 'Add' %}<span class="text-danger">*</span>{% endif %}
-                            </label>
-                            <input type="password" id="password" name="password" class="form-control" {% if button_text == 'Add' %}required{% endif %}>
-                            
-                            {% if button_text == 'Update' %}
-                                <div class="form-text">Leave blank to keep current password</div>
-                            {% endif %}
-                        </div>
-                        
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn fw-semibold btn-lg"
-                                style="background-color: #1c3744;color: white;">{{button_text}}</button>
-                        </div>
-                    </form>
+                <div class="card-body p-4" id="manage_user_form">
+                    {% include 'users/manage_user_form_inner.html' %}
                 </div>
             </div>
         </div>
@@ -83,4 +22,39 @@
 {% endblock %}
 
 {% block javascript %}
+{{ block.super }}
+<script>
+    $(document).ready(function () {
+        $('body').on('submit', '#user-form', function (e) {
+            e.preventDefault();
+            $('body #ajax-loader').fadeIn();
+            $.ajax({
+                type: 'POST',
+                url: window.location.href,
+                data: $(this).serialize(),
+                success: function (response) {
+                    $('body #ajax-loader').fadeOut();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: response.message,
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                        $('#manage_user_form').html(response.html);  // reload form div only
+                    });
+                },
+                error: function (xhr, status, error) {
+                    $('#ajax-loader').fadeOut();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Something went wrong. Please try again!',
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            });
+        })
+    })
+</script>
 {% endblock %}
