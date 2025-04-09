@@ -18,13 +18,15 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label fw-semibold">First Name</label>
+                                <label for="first_name" class="form-label fw-semibold">First Name<span
+                                        style="color: red;">*</span></label>
                                 <input type="text" id="first_name" name="first_name" class="form-control"
                                     placeholder="Enter first name" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="last_name" class="form-label fw-semibold">Last Name</label>
+                                <label for="last_name" class="form-label fw-semibold">Last Name<span
+                                        style="color: red;">*</span></label>
                                 <input type="text" id="last_name" name="last_name" class="form-control"
                                     placeholder="Enter last name" required>
                             </div>
@@ -32,13 +34,15 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label fw-semibold">Email</label>
+                                <label for="email" class="form-label fw-semibold">Email<span
+                                        style="color: red;">*</span></label>
                                 <input type="email" id="email" name="email" class="form-control"
                                     placeholder="Enter email" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label fw-semibold">Phone</label>
+                                <label for="phone" class="form-label fw-semibold">Phone<span
+                                        style="color: red;">*</span></label>
                                 <input type="text" id="phone" name="phone" class="form-control"
                                     placeholder="Enter phone number" required>
                             </div>
@@ -47,22 +51,25 @@
                         <div class="mb-3">
                             <label for="business_details" class="form-label fw-semibold">Business Details</label>
                             <textarea id="business_details" name="business_details" class="form-control" rows="3"
-                                placeholder="Provide business details (optional)"></textarea>
+                                placeholder="Provide business details"></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label for="address" class="form-label fw-semibold">Address</label>
+                            <label for="address" class="form-label fw-semibold">Address<span
+                                    style="color: red;">*</span></label>
                             <textarea id="address" name="address" class="form-control" rows="3"
                                 placeholder="Enter full address" required></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label for="invoice" class="form-label fw-semibold">Invoice</label>
+                            <label for="invoice" class="form-label fw-semibold">Invoice<span
+                                    style="color: red;">*</span></label>
                             <input type="file" id="invoice" name="invoice" class="form-control" required>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-lg fw-semibold" style="background-color: rgb(26, 45, 66);color: white;">
+                            <button type="submit" class="btn btn-lg fw-semibold"
+                                style="background-color: rgb(26, 45, 66);color: white;">
                                 Submit Request
                             </button>
                         </div>
@@ -78,4 +85,29 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block javascript %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if messages %}
+        {% for message in messages %}
+        Swal.fire({
+            icon: '{{ message.tags|escapejs }}',
+            title: '{{ message.message|escapejs }}',
+            confirmButtonText: 'OK'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                {% if message.tags == "success" %}
+                window.location.href = '/';
+                {% else %}
+                window.location.href = window.location.href;  // reload same page
+                {% endif %}
+            }
+        });
+        {% endfor %}
+        {% endif %}
+    });
+</script>
+
 {% endblock %}

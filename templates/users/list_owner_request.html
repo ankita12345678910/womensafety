@@ -1,0 +1,206 @@
+{% extends 'user_base.html' %}
+
+{% block title %}
+{{ block.super }} request List
+{% endblock %}
+{% block stylesheets %}
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Details</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"
+                    style="margin-left: auto;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+            </div>
+            <div class="modal-footer">
+                <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container mt-5">
+    <!-- Page Heading -->
+    <div class="row">
+        <div class="col text-center">
+            <h3 class="text-dark mb-4 fw-bold">Owner Request List</h3>
+        </div>
+    </div>
+
+    <!-- Responsive Table Card -->
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <!-- Table with responsive scroll -->
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle mb-0">
+                    <thead class="table-primary text-center">
+                        <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">First Name</th>
+                            <th scope="col">Last Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col">Address</th>
+                            <th scope="col">Invoice</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in all_requests %}
+                        <tr>
+
+                            <td class="text-center">{{ req.id }}</td>
+                            <td>{{ req.first_name }}</td>
+                            <td>{{ req.last_name }}</td>
+                            <td>{{ req.email }}</td>
+                            <td>{{ req.phone }}</td>
+                            <td>{{ req.address }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>{{ req.invoice }}</span>
+                                    {% if req.invoice %}
+                                    <a href="/media/invoices/{{ req.invoice }}" target="_blank"
+                                        class="btn btn-sm btn-outline-info ms-2">
+                                        View <i class="fa fa-eye" style="width: 20px;"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-center" id="js-status{{req.id}}">
+
+                                {% if req.status == 'pending' %}
+                                <span class="btn btn-warning text-dark">Pending</span>
+                                {% elif req.status == 'approved' %}
+                                <span class="btn btn-success">Approved</span>
+                                {% elif req.status == 'rejected' %}
+                                <span class="btn btn-danger">Rejected</span>
+                                {% else %}
+                                <span class="btn btn-secondary">Unknown</span>
+                                {% endif %}
+                                <button class="btn btn-outline-info view-details-btn" dataId="{{ req.id }}"
+                                    data-bs-toggle="modal" data-bs-target="#exampleModalCenter">
+                                    <i class="fa fa-pen" style="width: 20px;"></i>
+                                </button>
+
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">No owner requests found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    $(document).ready(function () {
+        $('body').on('click', '.view-details-btn', function () {
+            var id = $(this).attr('dataId');
+            var url = `/ajax/fetch/owner/data/${id}`;
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (response) {
+                    $('#exampleModalCenter .modal-body').html(response.html);
+                    if (response.current_status == 'rejected') {
+                        footer = `<button type="button" class="btn btn-success update-owner-status" requestId="${id}" status="approved">Approve</button>`
+                    } else {
+                        footer = `<button type="button" class="btn btn-success update-owner-status" requestId="${id}" status="approved">Approve</button>
+              <button type="button" class="btn btn-danger update-owner-status" requestId="${id}" status="rejected">Reject</button>`;
+                    }
+                    $('#exampleModalCenter .modal-footer').html(footer);
+                },
+                error: function () {
+                    $('#exampleModalCenter .modal-body').html("<p class='text-danger'>Failed to load details.</p>");
+                }
+            });
+        });
+
+        $('body').on('click', '.update-owner-status', function () {
+            var id = $(this).attr('requestId');
+            var status = $(this).attr('status');
+            var confirmMessage = `Are you sure you want to ${status} this owner request?`;
+            var url = `/ajax/update/owner/status/${id}/${status}`
+            // Use SweetAlert2 for confirmation
+            Swal.fire({
+                title: 'Confirm Action',
+                text: confirmMessage,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, proceed!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const $btn = $(this);
+                    const originalHtml = $btn.html();
+                    $btn.html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Approving...`);
+                    $btn.prop('disabled', true);
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        success: function (response) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                if (status === 'approved') {
+                                    $(`body #js-status${id}`).closest('tr').fadeOut(500, function () {
+                                        $(this).remove();
+                                    });
+                                } else {
+
+                                    let newBadge = `
+                                    <div class="d-flex justify-content-center align-items-center gap-2">
+                                        <span class="btn btn-danger">Rejected</span>
+                                        <button class="btn btn-outline-info view-details-btn" dataId="${id}"
+                                            data-bs-toggle="modal" data-bs-target="#exampleModalCenter">
+                                            <i class="fa fa-pen" style="width: 20px;"></i>
+                                        </button>
+                                    </div>`;
+                                    $(`body #js-status${id}`).addClass('text-center');
+                                    $(`body #js-status${id}`).html(newBadge)
+                                }
+
+                                $('#exampleModalCenter').modal('hide');
+                                $btn.html(originalHtml).prop('disabled', false);
+                            });
+                        },
+                        error: function () {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Something went wrong. Please try again.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                            $btn.html(originalHtml).prop('disabled', false);
+                        }
+                    });
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    // Action canceled, no changes
+                }
+            });
+        });
+    });
+
+</script>
+{% endblock %}
