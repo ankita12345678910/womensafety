@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -68,6 +69,7 @@ def manageUser(request, id=None):
             """, [role, phone, address, user.id])
 
             msg = 'User created successfully.'
+            ''''
             subject = "Your Owner Account Has Been Created"
             message = f"""
             Hello {user.first_name},
@@ -92,7 +94,7 @@ def manageUser(request, id=None):
                 [user.email],
                 fail_silently=False,
             )
-
+            '''
             html = render_to_string("users/manage_user_form_inner.html", {
                 'target_user': None,
                 'button_text': 'Add'
@@ -204,7 +206,7 @@ def updateOwnerStatus(request, id, status):
             """, ["owner", owner.phone, owner.address, user.id])
 
             # mail sending code
-
+            ''''
             subject = "Your Owner Account Has Been Approved"
             message = f"""
             Hello {owner.first_name},
@@ -229,6 +231,7 @@ def updateOwnerStatus(request, id, status):
                 [owner.email],
                 fail_silently=False,
             )
+            '''
             # Delete from OwnerRequests
             owner.delete()
 
@@ -255,3 +258,11 @@ def updateOwnerStatus(request, id, status):
 def listUsers(request):
     users = User.objects.raw("SELECT * FROM auth_user WHERE role IN ('admin', 'owner') and is_active=1 ORDER BY date_joined DESC")
     return render(request, 'users/list_user.html', {'users': users})
+def delete_user(request, user_id):
+    if request.user.id == user_id:
+        return JsonResponse({'error': 'Cannot delete yourself.'}, status=400)
+
+    user = get_object_or_404(User, pk=user_id)
+    user.is_active = False
+    user.save()
+    return JsonResponse({'success': True})

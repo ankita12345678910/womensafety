@@ -3,6 +3,8 @@
 {% block title %}
 {{ block.super }}User list
 {% endblock %}
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {% block stylesheets %}
 {{ block.super }}
@@ -55,8 +57,11 @@
                                     <i class="fa fa-pen"style="width: 18px;"></i>
                                 </a>
                                 {% if request.user.id is not data.id %}
-                                <a href="#" title="Delete" class="btn btn-sm btn-outline-danger ms-2">
-                                    <i class="fa fa-trash"style="width: 18px;"></i>
+                                <a href="#" 
+                                class="btn btn-sm btn-outline-danger ms-2 delete-user-btn" 
+                                 data-id="{{ data.id }}" 
+                                 title="Delete">
+                                <i class="fa fa-trash" style="width: 18px;"></i>
                                 </a>
                                 {% endif %}
                             </td>
@@ -72,8 +77,66 @@
         </div>
     </div>
 </div>
+
+  
 {% endblock %}
 
 {% block javascript %}
 {{ block.super }}
+<script>
+    document.querySelectorAll('.delete-user-btn').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const userId = this.dataset.id;
+        const row = this.closest('tr');
+  
+        Swal.fire({
+          title: 'Are you sure?',
+          text: "This user will be  deleted!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(`/users/delete/${userId}/`, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+              }
+            })
+            .then(response => {
+              if (!response.ok) throw new Error('Failed to delete user.');
+              return response.json();
+            })
+            .then(data => {
+              if (data.success) {
+                row.remove();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Deleted!',
+                  text: 'User has been deleted.',
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+              } else {
+                throw new Error(data.error || 'Unknown error');
+              }
+            })
+            .catch(error => {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message
+              });
+            });
+          }
+        });
+      });
+    });
+  </script>
+  
+  
 {% endblock %}

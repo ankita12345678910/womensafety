@@ -12,4 +12,5 @@ urlpatterns = [
     path('ajax/fetch/owner/data/<id>', views.getOwnerDetailsByAjax, name='ajax_fetch_owner_data'),
     path('ajax/update/owner/status/<int:id>/<str:status>/', views.updateOwnerStatus, name='ajax_update_owner_status'),
     path('list/users', views.listUsers, name='list_users'),
+    path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
 ]
