@@ -74,40 +74,67 @@
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
-
                 <li>
-                    <a href="{% url 'dashboard' %}" class="nav-link link-light">
+                    <a href="#" class="nav-link link-light">
                         <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                     </a>
                 </li>
-                <li>
-                    <a href="{% url 'list_request' %}" class="nav-link link-light">
-                        <i class="fas fa-user-check me-2"></i>Requested Owner
-                    </a>
-                </li>
-                <li>
-                    <span class="nav-link link-light">
-                        <i class="fas fa-users-cog me-2"></i> Manage User
-                    </span>
-                    <ul class="nav flex-column ms-3">
-                        <li class="nav-item">
-                            <a href="{% url 'manage_user' -1 %}" class="nav-link link-light">
-                                <i class="fas fa-user me-2"></i> Add User
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'list_users' %}" class="nav-link link-light">
-                                <i class="fas fa-list me-2"></i> List User
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+            
+                {% if user.details.role == 'admin' %}
+                    <li>
+                        <a href="{% url 'list_request' %}" class="nav-link link-light">
+                            <i class="fas fa-user-check me-2"></i> Requested Owner
+                        </a>
+                    </li>
+                    <li>
+                        <span class="nav-link link-light">
+                            <i class="fas fa-users-cog me-2"></i> Manage User
+                        </span>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a href="{% url 'manage_user' -1 %}" class="nav-link link-light">
+                                    <i class="fas fa-user me-2"></i> Add User
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'list_users' %}" class="nav-link link-light">
+                                    <i class="fas fa-list me-2"></i> List User
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% elif user.details.role == 'owner' %}
+                    <li>
+                        <span class="nav-link link-light">
+                            <i class="fas fa-video me-2"></i> Manage Camera
+                        </span>
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a href="#" class="nav-link link-light">
+                                    <i class="fas fa-plus me-2"></i> Add Camera
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link link-light">
+                                    <i class="fas fa-list me-2"></i> List Camera
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- <li>
+                        <a href="#" class="nav-link link-light">
+                            <i class="fas fa-user-plus me-2"></i> Add Viewers
+                        </a>
+                    </li> -->
+                {% endif %}
+            
                 <li>
                     <a href="#" class="nav-link link-light">
                         <i class="fas fa-cogs me-2"></i> Settings
                     </a>
                 </li>
             </ul>
+            
             <hr>
         </div>
 

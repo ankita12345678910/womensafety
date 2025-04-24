@@ -43,23 +43,23 @@
                     <tbody>
                         {% for data in users %}
                         <tr>
-                            <td class="text-center">{{ data.id }}</td>
-                            <td>{{ data.first_name }} {{ data.last_name }}</td>
-                            <td>{{ data.email }}</td>
-                            <td>{{ data.phone_number }}</td>
-                            <td>{{ data.address }}</td>
-                            <td>{{ data.role }}</td>
+                          <td class="text-center">{{ data.user.id }}</td>
+                          <td>{{ data.user.first_name }} {{ data.user.last_name }}</td>
+                          <td>{{ data.user.email }}</td>
+                          <td>{{ data.phone_number }}</td>
+                          <td>{{ data.address }}</td>
+                          <td>{{ data.role }}</td>
                             <td class="text-center">
                                 <a href="#" title="View" class="btn btn-sm btn-outline-info ms-2">
                                     <i class="fa fa-eye"style="width: 18px;"></i>
                                 </a>
-                                <a href="{% url 'manage_user' data.id %}" title="Edit" class="btn btn-sm btn-outline-warning ms-2">
+                                <a href="{% url 'manage_user' data.user.id %}" title="Edit" class="btn btn-sm btn-outline-warning ms-2">
                                     <i class="fa fa-pen"style="width: 18px;"></i>
                                 </a>
-                                {% if request.user.id is not data.id %}
+                                {% if request.user.id is not data.user.id %}
                                 <a href="#" 
                                 class="btn btn-sm btn-outline-danger ms-2 delete-user-btn" 
-                                 data-id="{{ data.id }}" 
+                                 data-id="{{ data.user.id }}" 
                                  title="Delete">
                                 <i class="fa fa-trash" style="width: 18px;"></i>
                                 </a>

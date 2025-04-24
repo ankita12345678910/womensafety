@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from django.db import connection
+from usersapp.models import UserDetails  # Import your UserDetails model
 
 class Command(BaseCommand):
     help = 'Seeds the database with an admin user.'
@@ -11,6 +11,7 @@ class Command(BaseCommand):
         password = 'admin123'
 
         if not User.objects.filter(username=email).exists():
+            # 1. Create the admin user
             user = User.objects.create_superuser(
                 username=email,
                 email=email,
@@ -19,11 +20,13 @@ class Command(BaseCommand):
                 last_name='User'
             )
 
-            # Add custom fields: role, phone_number, address
-            cursor = connection.cursor()
-            cursor.execute("""
-                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
-            """, ['admin', '1234567890', 'Admin HQ', user.id])
+            # 2. Create related UserDetails record
+            UserDetails.objects.create(
+                user=user,
+                role='admin',
+                phone_number='1234567890',
+                address='Admin HQ'
+            )
 
             self.stdout.write(self.style.SUCCESS(f"✅ Admin user created: {email} / {password}"))
         else:

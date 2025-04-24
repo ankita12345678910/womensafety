@@ -1,4 +1,4 @@
-from usersapp.models import OwnerRequests
+from usersapp.models import OwnerRequests,UserDetails
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 import os
@@ -16,22 +16,45 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
 # Create your views here.
+
+class RoleBasedLoginView(LoginView):
+    template_name = 'auth/login.html'
+
+    def get_success_url(self):
+        role = self.request.user.details.role
+        if role == 'admin':
+            return reverse_lazy('admin_dashboard')
+        elif role == 'owner':
+            return reverse_lazy('owner_dashboard')
+        elif role == 'viewer':
+            return reverse_lazy('viewer_dashboard')
 
 
 @login_required
 def adminDashboard(request):
     return render(request, 'users/admin_dashboard.html')
 
+@login_required
+def ownerDashboard(request):
+    return render(request, 'users/owner_dashboard.html')
+
+@login_required
+def viewerDashboard(request):
+    return render(request, 'users/viewer_dashboard.html')
+
 
 @login_required(login_url='login')
 def manageUser(request, id=None):
     is_edit = id and int(id) != -1
     user = None
+    user_details = None
 
     if is_edit:
-        user = User.objects.raw("SELECT * FROM auth_user WHERE id=%s", [id])[0]
+        user = User.objects.get(id=id)
+        user_details = getattr(user, 'details', None)  # Safe way to access related UserDetails
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -40,61 +63,56 @@ def manageUser(request, id=None):
         phone = request.POST.get('phone')
         role = request.POST.get('role')
         address = request.POST.get('address')
+
         if is_edit:
+            # Update User basic info
             user.first_name = fname
             user.last_name = lname
             user.email = email
             user.username = email
             user.save()
 
-            cursor = connection.cursor()
-            cursor.execute("""
-                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
-            """, [user.role, phone, address, user.id])
+            # Update or create UserDetails
+            if user_details:
+                user_details.phone_number = phone
+                user_details.role = role
+                user_details.address = address
+                user_details.save()
+            else:
+                UserDetails.objects.create(
+                    user=user,
+                    phone_number=phone,
+                    role=role,
+                    address=address
+                )
 
             return JsonResponse({
                 'message': 'User updated successfully.',
                 'redirect_url': reverse('list_users')  # 👈 Redirect after edit
             })
+
         else:
+            # Create new user
             user = User.objects.create_user(
-                username=email, email=email, password=phone,
-                first_name=fname, last_name=lname
+                username=email,
+                email=email,
+                password=phone,  # Temporary password is phone
+                first_name=fname,
+                last_name=lname
             )
 
-            # Update extra fields
-            cursor = connection.cursor()
-            cursor.execute("""
-                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
-            """, [role, phone, address, user.id])
+            # Create UserDetails
+            UserDetails.objects.create(
+                user=user,
+                phone_number=phone,
+                role=role,
+                address=address
+            )
 
             msg = 'User created successfully.'
-            ''''
-            subject = "Your Owner Account Has Been Created"
-            message = f"""
-            Hello {user.first_name},
 
-            An account has been created for you as an Owner on the Women Safety Platform.
+            # Mail sending logic here if you want (already written)
 
-            Username: {user.email}
-            Temporary Password: {phone}
-
-            Please login using this link:
-            🔗 http://127.0.0.1:8000/login/
-
-            After login, make sure to change your password from your dashboard.
-
-            Best regards,  
-            Women Safety Team
-            """
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
-            '''
             html = render_to_string("users/manage_user_form_inner.html", {
                 'target_user': None,
                 'button_text': 'Add'
@@ -105,10 +123,11 @@ def manageUser(request, id=None):
                 'html': html
             })
 
-    # GET request: render full page
+    # GET request: render form
     button_text = "Update" if is_edit else "Add"
     return render(request, "users/manage_user.html", {
         'target_user': user,
+        'target_user_details': user_details,
         'button_text': button_text
     })
 
@@ -192,7 +211,7 @@ def updateOwnerStatus(request, id, status):
         owner = OwnerRequests.objects.get(id=id)
 
         if status == 'approved':
-            # Create user
+            # 1. Create User
             user = User.objects.create_user(
                 username=owner.email,
                 email=owner.email,
@@ -200,13 +219,17 @@ def updateOwnerStatus(request, id, status):
                 first_name=owner.first_name,
                 last_name=owner.last_name,
             )
-            cursor = connection.cursor()
-            cursor.execute("""
-                UPDATE auth_user SET role = %s, phone_number = %s, address = %s WHERE id = %s
-            """, ["owner", owner.phone, owner.address, user.id])
 
-            # mail sending code
-            ''''
+            # 2. Create UserDetails
+            UserDetails.objects.create(
+                user=user,
+                role='owner',
+                phone_number=owner.phone,
+                address=owner.address,
+            )
+
+            owner.delete()
+            # 3. (Optional) Send Mail - Uncomment if needed
             subject = "Your Owner Account Has Been Approved"
             message = f"""
             Hello {owner.first_name},
@@ -231,9 +254,8 @@ def updateOwnerStatus(request, id, status):
                 [owner.email],
                 fail_silently=False,
             )
-            '''
-            # Delete from OwnerRequests
-            owner.delete()
+
+            # 4. Delete from OwnerRequests
 
             return JsonResponse({
                 'success': True,
@@ -256,8 +278,13 @@ def updateOwnerStatus(request, id, status):
         return JsonResponse({'success': False, 'error': 'Owner request not found'}, status=404)
 
 def listUsers(request):
-    users = User.objects.raw("SELECT * FROM auth_user WHERE role IN ('admin', 'owner') and is_active=1 ORDER BY date_joined DESC")
+    users = UserDetails.objects.select_related('user').filter(
+        role__in=['admin', 'owner'],
+        user__is_active=True
+    ).order_by('-user__date_joined')
+    
     return render(request, 'users/list_user.html', {'users': users})
+
 def delete_user(request, user_id):
     if request.user.id == user_id:
         return JsonResponse({'error': 'Cannot delete yourself.'}, status=400)
