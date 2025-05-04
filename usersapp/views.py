@@ -230,6 +230,7 @@ def updateOwnerStatus(request, id, status):
 
             owner.delete()
             # 3. (Optional) Send Mail - Uncomment if needed
+            '''
             subject = "Your Owner Account Has Been Approved"
             message = f"""
             Hello {owner.first_name},
@@ -254,7 +255,7 @@ def updateOwnerStatus(request, id, status):
                 [owner.email],
                 fail_silently=False,
             )
-
+             '''
             # 4. Delete from OwnerRequests
 
             return JsonResponse({

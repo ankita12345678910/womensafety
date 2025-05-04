@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+
 urlpatterns = [
-    path("manage/",views.manageCameras)
+   path('cameras/manage/<id>/', views.manageCamera, name='manage_camera'),
 ]

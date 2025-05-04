@@ -1,0 +1,64 @@
+{% extends 'user_base.html' %}
+
+{% block title %}
+    {{ block.super }} | Manage Camera
+{% endblock %}
+
+{% block stylesheets %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-4" id="manage_camera_form">
+                    {% include 'cameras/manage_camera_form_inner.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    $(document).ready(function () {
+        $('body').on('submit', '#camera-form', function (e) {
+            e.preventDefault();
+            $('body #ajax-loader').fadeIn();
+            $.ajax({
+                type: 'POST',
+                url: window.location.href,
+                data: $(this).serialize(),
+                success: function (response) {
+                    $('body #ajax-loader').fadeOut();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: response.message,
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            $('#manage_camera_form').html(response.html);
+                        }
+                    });
+                },
+                error: function (xhr, status, error) {
+                    $('#ajax-loader').fadeOut();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Something went wrong. Please try again!',
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
