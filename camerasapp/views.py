@@ -1,15 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import HttpResponse
-
-# Create your views here.
-
-
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.urls import reverse
 from django.template.loader import render_to_string
 from .models import Camera
+from django.views.decorators.http import require_POST
+
 
 @login_required(login_url='login')
 def manageCamera(request, id=None):
@@ -58,4 +56,24 @@ def manageCamera(request, id=None):
         'camera': camera,
         'button_text': button_text
     })
+   
+@login_required(login_url='login') 
+def listCameras(request):
+    cameras = Camera.objects.all()
+    return render(request, "cameras/list_cameras.html", {
+        'cameras': cameras
+    })  
+
+
+@require_POST
+def change_camera_status(request, camera_id):
+    camera = get_object_or_404(Camera, id=camera_id)
+    new_status = request.POST.get('status')
+    
+    if new_status in ['active', 'inactive', 'deleted']:
+        camera.status = new_status
+        camera.save()
+    
+    # After updating the status, redirect to the camera list
+    return redirect('list_cameras')
 
