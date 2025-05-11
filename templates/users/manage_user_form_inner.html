@@ -1,7 +1,11 @@
+{% if not modal_mode %}
 <h3 class="text-center mb-4 fw-bold text-white py-2 rounded-3" style="background-color: #375889;">
     Create Your Account
 </h3>
-<form method="POST" action="" id="user-form">
+{% endif %}
+
+<form method="POST" action="{% if modal_mode %}{{ request.path }}?modal=1{% else %}{{ request.path }}{% endif %}"
+    id="user-form">
     {% csrf_token %}
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -31,30 +35,34 @@
 
     <div class="mb-3">
         <label for="address" class="form-label fw-semibold">Address</label>
-        <textarea id="address" name="address" class="form-control" rows="2" required>{{ target_user.address|default_if_none:'' }}</textarea>
+        <textarea id="address" name="address" class="form-control" rows="2"
+            required>{{ target_user.address|default_if_none:'' }}</textarea>
     </div>
-
+    {% if not modal_mode %}
     <div class="mb-3">
         <label for="role" class="form-label fw-semibold">Role</label>
         <select id="role" name="role" class="form-select" required {% if target_user %}disabled{% endif %}>
-            <option value="" disabled {% if not target_user or not target_user.role %}selected{% endif %}>Select role</option>
-            <option value="admin" {% if target_user.role == "admin" %}selected{% endif %}>Admin</option>
-            <option value="owner" {% if target_user.role == "owner" %}selected{% endif %}>Owner</option>
+            <option value="" disabled {% if not target_user or not target_user.role %}selected{% endif %}>Select role
+            </option>
+            <option value="admin" {% if target_user.role=="admin" %}selected{% endif %}>Admin</option>
+            <option value="owner" {% if target_user.role=="owner" %}selected{% endif %}>Owner</option>
         </select>
     </div>
-    
+    {% endif %}
+
+
 
     <!-- <div class="mb-4">
         <label for="password" class="form-label fw-semibold">
             Password {% if button_text == 'Add' %}<span class="text-danger">*</span>{% endif %}
         </label>
         <input type="password" id="password" name="password" class="form-control" {% if button_text == 'Add' %}required{% endif %}> -->
-        
-        <!-- {% if button_text == 'Update' %}
+
+    <!-- {% if button_text == 'Update' %}
             <div class="form-text">Leave blank to keep current password</div>
         {% endif %}
     </div> -->
-    
+
 
     <div class="d-grid">
         <button type="submit" class="btn fw-semibold btn-lg"

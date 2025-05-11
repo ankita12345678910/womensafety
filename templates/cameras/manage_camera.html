@@ -1,18 +1,24 @@
 {% extends 'user_base.html' %}
 
 {% block title %}
-    {{ block.super }} | Manage Camera
+{{ block.super }} | Manage Camera
 {% endblock %}
 
 {% block stylesheets %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg border-0 rounded-4">
+            {% if button_text == "Update" %}
+            <button id="manage-user-btn" class="btn btn-info position-absolute" data-camera-id="{{ camera.id }}"
+                style="top: 75px; right: 20px; z-index: 10;">
+                Add viewers in this camera
+            </button>
+            {% endif %}
+            <div class="card shadow-lg border-0 rounded-4 position-relative">
                 <div class="card-body p-4" id="manage_camera_form">
                     {% include 'cameras/manage_camera_form_inner.html' %}
                 </div>
@@ -20,36 +26,71 @@
         </div>
     </div>
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="addViewerModal" tabindex="-1" aria-labelledby="addViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Viewer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewer-modal-body">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block javascript %}
 {{ block.super }}
 <script>
     $(document).ready(function () {
-        $('body').on('submit', '#camera-form', function (e) {
+        // Open modal to add viewer
+        $('#manage-user-btn').on('click', function () {
+            const cameraId = $(this).data('camera-id');
+            $('#addViewerModal').data('camera-id', cameraId); // Store in modal for later use
+
+            $('#addViewerModal').modal('show');
+            $('#viewer-modal-body').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
+
+            $.get(`/manage/user/-1?modal=1`, function (html) {
+                $('#viewer-modal-body').html(html);
+            });
+        });
+
+        // Delegate form submission handler to body since the form is loaded dynamically
+        $('body').on('submit', '#user-form', function (e) {
             e.preventDefault();
             $('body #ajax-loader').fadeIn();
+
+            const cameraId = $('#addViewerModal').data('camera-id'); // Get from modal
+
+            const data = $(this).serialize() + `&camera_id=${cameraId}`;
+
             $.ajax({
                 type: 'POST',
-                url: window.location.href,
-                data: $(this).serialize(),
+                url: $(this).attr('action'),
+                data: data,
                 success: function (response) {
                     $('body #ajax-loader').fadeOut();
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Success',
                         text: response.message,
                         confirmButtonColor: '#3085d6'
                     }).then(() => {
-                        if (response.redirect_url) {
-                            window.location.href = response.redirect_url;
-                        } else {
-                            $('#manage_camera_form').html(response.html);
-                        }
+                        $('#addViewerModal').modal('hide');
+                        $('#viewer-modal-body').html('');
                     });
                 },
-                error: function (xhr, status, error) {
-                    $('#ajax-loader').fadeOut();
+                error: function () {
+                    $('body #ajax-loader').fadeOut();
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -59,6 +100,8 @@
                 }
             });
         });
+
     });
+
 </script>
 {% endblock %}

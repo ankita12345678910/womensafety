@@ -1,4 +1,5 @@
-from usersapp.models import OwnerRequests,UserDetails
+from usersapp.models import OwnerRequests, UserDetails
+from camerasapp.models import Camera
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 import os
@@ -20,6 +21,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 # Create your views here.
 
+
 class RoleBasedLoginView(LoginView):
     template_name = 'auth/login.html'
 
@@ -37,58 +39,60 @@ class RoleBasedLoginView(LoginView):
 def adminDashboard(request):
     return render(request, 'users/admin_dashboard.html')
 
+
 @login_required
 def ownerDashboard(request):
     return render(request, 'users/owner_dashboard.html')
+
 
 @login_required
 def viewerDashboard(request):
     return render(request, 'users/viewer_dashboard.html')
 
 
-@login_required(login_url='login')
 def manageUser(request, id=None):
     is_edit = id and int(id) != -1
+    modal_mode = request.GET.get('modal') == '1'
+
     user = None
     user_details = None
-
     if is_edit:
-        user = User.objects.get(id=id)
-        user_details = getattr(user, 'details', None)  # Safe way to access related UserDetails
+        user = get_object_or_404(User, id=id)
+        user_details = getattr(user, 'details', None)
 
     if request.method == 'POST':
+        camera_id = request.POST.get('camera_id')
         email = request.POST.get('email')
         fname = request.POST.get('first_name')
         lname = request.POST.get('last_name')
         phone = request.POST.get('phone')
-        role = request.POST.get('role')
         address = request.POST.get('address')
+        role = request.POST.get('role') if not modal_mode else 'viewer'
 
         if is_edit:
-            # Update User basic info
             user.first_name = fname
             user.last_name = lname
             user.email = email
             user.username = email
             user.save()
 
-            # Update or create UserDetails
             if user_details:
                 user_details.phone_number = phone
-                user_details.role = role
                 user_details.address = address
+                if not modal_mode:
+                    user_details.role = role
                 user_details.save()
             else:
                 UserDetails.objects.create(
                     user=user,
                     phone_number=phone,
-                    role=role,
-                    address=address
+                    address=address,
+                    role=role
                 )
 
             return JsonResponse({
                 'message': 'User updated successfully.',
-                'redirect_url': reverse('list_users')  # 👈 Redirect after edit
+                'redirect_url': None if modal_mode else reverse('list_users')
             })
 
         else:
@@ -96,39 +100,44 @@ def manageUser(request, id=None):
             user = User.objects.create_user(
                 username=email,
                 email=email,
-                password=phone,  # Temporary password is phone
+                password=phone,
                 first_name=fname,
                 last_name=lname
             )
 
-            # Create UserDetails
             UserDetails.objects.create(
                 user=user,
                 phone_number=phone,
-                role=role,
-                address=address
+                address=address,
+                role=role
             )
-
-            msg = 'User created successfully.'
-
-            # Mail sending logic here if you want (already written)
-
-            html = render_to_string("users/manage_user_form_inner.html", {
-                'target_user': None,
-                'button_text': 'Add'
-            }, request=request)
+            if camera_id:
+                try:
+                    camera = Camera.objects.get(id=camera_id)
+                    camera.viewers.add(user)
+                except Camera.DoesNotExist:
+                    pass
 
             return JsonResponse({
-                'message': msg,
-                'html': html
+                'message': 'Viewer added successfully.',
+                'redirect_url': None if modal_mode else reverse('list_users')
             })
 
-    # GET request: render form
+    # GET (initial load of form)
     button_text = "Update" if is_edit else "Add"
+
+    if modal_mode:
+        return render(request, "users/manage_user_form_inner.html", {
+            'target_user': user,
+            'button_text': button_text,
+            'modal_mode': modal_mode
+        })
+
     return render(request, "users/manage_user.html", {
         'target_user': user,
         'target_user_details': user_details,
-        'button_text': button_text
+        'button_text': button_text,
+        'modal_mode': modal_mode
     })
 
 
@@ -278,13 +287,15 @@ def updateOwnerStatus(request, id, status):
     except OwnerRequests.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Owner request not found'}, status=404)
 
+
 def listUsers(request):
     users = UserDetails.objects.select_related('user').filter(
         role__in=['admin', 'owner'],
         user__is_active=True
     ).order_by('-user__date_joined')
-    
+
     return render(request, 'users/list_user.html', {'users': users})
+
 
 def delete_user(request, user_id):
     if request.user.id == user_id:
