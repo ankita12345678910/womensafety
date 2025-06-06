@@ -1,8 +1,7 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-
-# Create your views here.
-
+from threatsapp.models import ThreatDetection  # Ensure your model is correctly imported
 
 def manageThreats(request):
-    return HttpResponse("manage threats")
+    """ Fetch all threats from the database and display them in the template """
+    threats = ThreatDetection.objects.all().order_by('-detected_at')  # Fetch all threats, newest first
+    return render(request, "threats/manage_threats.html", {"threats": threats})
