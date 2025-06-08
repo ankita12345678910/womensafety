@@ -47,7 +47,7 @@
                 <tbody>
                     {% for camera in active_cameras %}
                     <tr>
-                        <td>{{ forloop.counter }}</td> <!-- Uses forloop.counter to display row number -->
+                        <td>{{ forloop.counter }}</td>
                         <td>{{ camera.name }}</td>
                         <td>{{ camera.ip_address }}</td>
                         <td>{{ camera.location|default:"N/A" }}</td>
@@ -91,7 +91,7 @@
                 <tbody>
                     {% for camera in inactive_cameras %}
                     <tr>
-                        <td>{{ forloop.counter }}</td> <!-- Uses forloop.counter to display row number -->
+                        <td>{{ forloop.counter }}</td>
                         <td>{{ camera.name }}</td>
                         <td>{{ camera.ip_address }}</td>
                         <td>{{ camera.location|default:"N/A" }}</td>
@@ -99,8 +99,8 @@
                             <form method="post" action="{% url 'change_camera_status' camera.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="status" value="active">
-                                <button type="button" class="btn btn-success btn-sm status-btn" data-status="active">Set
-                                    Active</button>
+                                <button type="submit" class="btn btn-outline-primary btn-sm status-btn"
+                                    data-status="active">On Camera</button>
                             </form>
                             <form method="post" action="{% url 'change_camera_status' camera.id %}"
                                 class="d-inline ms-1">
@@ -136,7 +136,7 @@
             const status = $(this).data('status');
             const label = {
                 'inactive': 'Set Inactive',
-                'active': 'Set Active',
+                'active': 'On Camera',
                 'deleted': 'Delete'
             }[status];
 

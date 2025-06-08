@@ -7,6 +7,9 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from .models import Camera
 from django.views.decorators.http import require_POST
+from django.conf import settings
+import os
+import subprocess
 
 
 @login_required(login_url='login')
@@ -81,9 +84,19 @@ def change_camera_status(request, camera_id):
     camera = get_object_or_404(Camera, id=camera_id)
     new_status = request.POST.get('status')
 
-    if new_status in ['active', 'inactive', 'deleted']:
-        camera.status = new_status
-        camera.save()
+    # Update status in DB
+    camera.status = new_status
+    camera.save()
 
-    # After updating the status, redirect to the camera list
+    if new_status == 'active':
+        python_path = r"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\myenv\Scripts\python.exe"
+        detection_script_path = r"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\detecting-images.py"
+        log_path = rf"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\logs\camera_{camera_id}.log"
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        subprocess.Popen(
+            [python_path, detection_script_path, '--camera_id', str(camera_id)],
+            stdout=open(log_path, 'a'),
+            stderr=subprocess.STDOUT,
+        )
+
     return redirect('list_cameras')
