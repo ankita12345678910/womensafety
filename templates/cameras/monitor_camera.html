@@ -1,0 +1,12 @@
+{% extends 'user_base.html' %}
+{% block title %}Monitor Camera{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Monitoring: {{ camera.name }}</h3>
+    <p><strong>IP:</strong> {{ camera.ip_address }}</p>
+    <div class="embed-responsive embed-responsive-16by9">
+        <img id="camera-feed" src="{{ camera.ip_address }}" width="100%" alt="Live Camera Feed">
+    </div>
+</div>
+{% endblock %}

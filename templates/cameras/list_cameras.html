@@ -67,7 +67,10 @@
                             </form>
                         </td>
                         <td>
+                            <a href="{% url 'monitor_camera' camera.id %}" target="_blank"
+                                class="btn btn-success btn-sm">Monitor</a>
                             <a href="{% url 'manage_camera' camera.id %}" class="btn btn-primary btn-sm">Open</a>
+
                         </td>
                     </tr>
                     {% endfor %}

@@ -1,18 +1,51 @@
 {% extends 'user_base.html' %}
 
 {% block title %}
-{{ block.super }} Dashboard
+{{ block.super }} | Viewer Dashboard
 {% endblock %}
 
 {% block content %}
-{% load static %}
-<div class="container-fluid bg-light">
-    
-    <h1>This is viewer dashboard</h1>
-</div>
-{% endblock %}
+<div class="container mt-5">
+    <h2 class="mb-4">Assigned Active Cameras</h2>
 
-{% block javascript %}
-{{ block.super }}
-<!-- Future JS plugins here -->
+    {% if assigned_cameras %}
+    {% if active_cameras|length > 1 %}
+    <div class="mb-3 text-end">
+        <a href="{% url 'view_all_cameras' %}" class="btn btn-primary" target="_blank">View All Cameras</a>
+    </div>
+    {% endif %}
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Camera Name</th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Monitor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for camera in assigned_cameras %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ camera.name }}</td>
+                <td>{{ camera.ip_address }}</td>
+                <td>{{ camera.location|default:"Not specified" }}</td>
+                <td>
+                    {% if camera.status == 'active' %}
+                    <a href="{% url 'monitor_camera' camera.id %}" class="btn btn-success btn-sm"
+                        target="_blank">View</a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-sm" disabled>View</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">No active cameras assigned to you.</div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,7 +1,7 @@
 from usersapp.models import OwnerRequests, UserDetails
 from camerasapp.models import Camera
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 import os
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -47,7 +47,20 @@ def ownerDashboard(request):
 
 @login_required
 def viewerDashboard(request):
-    return render(request, 'users/viewer_dashboard.html')
+    user = request.user
+
+    if user.details.role != 'viewer':
+        return HttpResponseForbidden("Access denied")
+
+    # Get all cameras (active + inactive) assigned to the viewer
+    assigned_cameras = Camera.objects.filter(
+        viewers=user
+    ).order_by('name')
+
+    return render(request, 'users/viewer_dashboard.html', {
+        'assigned_cameras': assigned_cameras
+    })
+
 
 
 def manageUser(request, id=None):
@@ -96,34 +109,63 @@ def manageUser(request, id=None):
             })
 
         else:
-            # Create new user
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=phone,
-                first_name=fname,
-                last_name=lname
-            )
+            try:
+                # Check if the user already exists
+                user = User.objects.get(email=email)
+                user_details, created = UserDetails.objects.get_or_create(
+                    user=user)
 
-            UserDetails.objects.create(
-                user=user,
-                phone_number=phone,
-                address=address,
-                role=role
-            )
-            if camera_id:
-                try:
-                    camera = Camera.objects.get(id=camera_id)
-                    camera.viewers.add(user)
-                except Camera.DoesNotExist:
-                    pass
+                # Only allow if the existing user is a viewer
+                if user_details.role != 'viewer':
+                    return JsonResponse({
+                        'message': 'This user already exists but is not a viewer.',
+                        'error': True
+                    })
 
-            return JsonResponse({
-                'message': 'Viewer added successfully.',
-                'redirect_url': None if modal_mode else reverse('list_users')
-            })
+                # Assign camera if it's not already assigned
+                if camera_id:
+                    try:
+                        camera = Camera.objects.get(id=camera_id)
+                        if user not in camera.viewers.all():
+                            camera.viewers.add(user)
+                    except Camera.DoesNotExist:
+                        pass
 
-    # GET (initial load of form)
+                return JsonResponse({
+                    'message': 'Existing viewer assigned to this camera.',
+                    'redirect_url': None if modal_mode else reverse('list_users')
+                })
+
+            except User.DoesNotExist:
+                # Create new viewer
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=phone,
+                    first_name=fname,
+                    last_name=lname
+                )
+
+                UserDetails.objects.create(
+                    user=user,
+                    phone_number=phone,
+                    address=address,
+                    role=role
+                )
+
+                if camera_id:
+                    try:
+                        camera = Camera.objects.get(id=camera_id)
+                        camera.viewers.add(user)
+                    except Camera.DoesNotExist:
+                        pass
+
+                return JsonResponse({
+                    'message': 'New viewer added and assigned to camera.',
+                    'redirect_url': None if modal_mode else reverse('list_users')
+                })
+
+    # GET request - render form
     button_text = "Update" if is_edit else "Add"
 
     if modal_mode:

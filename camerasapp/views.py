@@ -84,19 +84,50 @@ def change_camera_status(request, camera_id):
     camera = get_object_or_404(Camera, id=camera_id)
     new_status = request.POST.get('status')
 
-    # Update status in DB
     camera.status = new_status
     camera.save()
 
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pid_dir = os.path.join(BASE_DIR, 'pids')
+    os.makedirs(pid_dir, exist_ok=True)
+
+    pid_file = os.path.join(pid_dir, f'camera_{camera_id}.pid')
+
     if new_status == 'active':
         python_path = r"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\myenv\Scripts\python.exe"
-        detection_script_path = r"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\detecting-images.py"
+        script_path = r"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\detecting-images.py"
         log_path = rf"C:\demo\Weapons-and-Knives-Detector-with-YOLOv8\logs\camera_{camera_id}.log"
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        subprocess.Popen(
-            [python_path, detection_script_path, '--camera_id', str(camera_id)],
+
+        process = subprocess.Popen(
+            [python_path, script_path, '--camera_id', str(camera_id)],
             stdout=open(log_path, 'a'),
             stderr=subprocess.STDOUT,
         )
 
+        with open(pid_file, 'w') as f:
+            f.write(str(process.pid))
+
+    elif new_status == 'inactive':
+        if os.path.exists(pid_file):
+            try:
+                with open(pid_file, 'r') as f:
+                    pid = int(f.read())
+                subprocess.call(['taskkill', '/F', '/PID', str(pid)])
+                os.remove(pid_file)
+            except Exception as e:
+                print(f"Error stopping camera process: {e}")
+
     return redirect('list_cameras')
+
+
+def monitor_camera(request, camera_id):
+    camera = get_object_or_404(Camera, id=camera_id)
+    return render(request, 'cameras/monitor_camera.html', {'camera': camera})
+
+
+@login_required
+def view_all_cameras(request):
+    user = request.user
+    active_cameras = user.viewable_cameras.filter(status='active')
+    return render(request, 'cameras/view_all_cameras.html', {'active_cameras': active_cameras})

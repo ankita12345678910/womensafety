@@ -1,0 +1,24 @@
+{% extends 'user_base.html' %}
+{% block title %}All Cameras{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Live View: All Assigned Cameras</h3>
+    <div class="row">
+        {% for camera in active_cameras %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <strong>{{ camera.name }}</strong>
+                </div>
+                <div class="card-body">
+                    <p>IP: {{ camera.ip_address }}</p>
+                    <p>Location: {{ camera.location }}</p>
+                    <img src="{{ camera.ip_address }}" class="img-fluid border" alt="Stream not available">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

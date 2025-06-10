@@ -11,7 +11,6 @@
 {% block content %}
 <div class="container py-5">
     {% if camera %}
-    <!-- Edit Mode: Tabs for Edit + Viewers -->
     <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body p-4">
             <!-- Tabs -->
@@ -30,7 +29,6 @@
                 </li>
             </ul>
 
-            <!-- Tab content -->
             <div class="tab-content mt-4">
                 <div class="tab-pane fade show active" id="edit" role="tabpanel" aria-labelledby="edit-tab">
                     <div id="manage_camera_form">
@@ -38,7 +36,6 @@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="viewers" role="tabpanel" aria-labelledby="viewers-tab">
-                    <!-- Add Viewer Button -->
                     <div class="mb-3 text-end">
                         <button id="manage-user-btn" class="btn btn-info" data-camera-id="{{ camera.id }}">
                             Add Viewer
@@ -49,12 +46,12 @@
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <th scope="col">First Name</th>
-                                <th scope="col">Last Name</th>
-                                <th scope="col">Email</th>
-                                <th scope="col">Phone Number</th>
-                                <th scope="col">Address</th>
-                                <th scope="col">Role</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Phone Number</th>
+                                <th>Address</th>
+                                <th>Role</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,16 +71,13 @@
                     <p class="text-muted">No viewers assigned to this camera.</p>
                     {% endif %}
                 </div>
-
-
             </div>
         </div>
     </div>
     {% else %}
-    <!-- Add Mode: Only the form -->
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg border-0 rounded-4 position-relative">
+            <div class="card shadow-lg border-0 rounded-4">
                 <div class="card-body p-4" id="manage_camera_form">
                     {% include 'cameras/manage_camera_form_inner.html' %}
                 </div>
@@ -93,6 +87,7 @@
     {% endif %}
 </div>
 
+<!-- Modal -->
 <div class="modal fade" id="addViewerModal" tabindex="-1" aria-labelledby="addViewerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -110,63 +105,67 @@
 </div>
 {% endblock %}
 
-
 {% block javascript %}
 {{ block.super }}
 <script>
     $(document).ready(function () {
-        // Open modal to add viewer
-        $('#manage-user-btn').on('click', function () {
-            const cameraId = $(this).data('camera-id');
-            $('#addViewerModal').data('camera-id', cameraId); // Store in modal for later use
+    // Open modal
+    $('#manage-user-btn').on('click', function () {
+        const cameraId = $(this).data('camera-id');
+        $('#addViewerModal').data('camera-id', cameraId);
+        $('#addViewerModal').modal('show');
+        $('#viewer-modal-body').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
 
-            $('#addViewerModal').modal('show');
-            $('#viewer-modal-body').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
-
-            $.get(`/manage/user/-1?modal=1`, function (html) {
-                $('#viewer-modal-body').html(html);
-            });
+        $.get(`/manage/user/-1?modal=1`, function (html) {
+            $('#viewer-modal-body').html(html);
         });
-
-        // Delegate form submission handler to body since the form is loaded dynamically
-        $('body').on('submit', '#user-form', function (e) {
-            e.preventDefault();
-            $('body #ajax-loader').fadeIn();
-
-            const cameraId = $('#addViewerModal').data('camera-id'); // Get from modal
-
-            const data = $(this).serialize() + `&camera_id=${cameraId}`;
-
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: data,
-                success: function (response) {
-                    $('body #ajax-loader').fadeOut();
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: response.message,
-                        confirmButtonColor: '#3085d6'
-                    }).then(() => {
-                        $('#addViewerModal').modal('hide');
-                        $('#viewer-modal-body').html('');
-                    });
-                },
-                error: function () {
-                    $('body #ajax-loader').fadeOut();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Something went wrong. Please try again!',
-                        confirmButtonColor: '#d33'
-                    });
-                }
-            });
-        });
-
     });
 
+    // Submit add viewer form
+    $('body').on('submit', '#user-form', function (e) {
+        e.preventDefault();
+        $('body #ajax-loader').fadeIn();
+        const cameraId = $('#addViewerModal').data('camera-id');
+        const data = $(this).serialize() + `&camera_id=${cameraId}`;
+
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),
+            data: data,
+            success: function (response) {
+                $('body #ajax-loader').fadeOut();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: response.message,
+                    confirmButtonColor: '#3085d6'
+                }).then(() => {
+                    // Preserve tab state before reload
+                    localStorage.setItem('activeTab', '#viewers');
+
+                    // Reload page
+                    location.reload();
+                });
+            },
+            error: function () {
+                $('body #ajax-loader').fadeOut();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again!',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    });
+
+    // Activate stored tab on page load
+    const activeTab = localStorage.getItem('activeTab');
+    if (activeTab) {
+        const tab = new bootstrap.Tab(document.querySelector(activeTab + '-tab'));
+        tab.show();
+        localStorage.removeItem('activeTab'); // Clear after applying
+    }
+});
 </script>
 {% endblock %}
