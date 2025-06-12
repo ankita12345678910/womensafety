@@ -1,5 +1,6 @@
 from usersapp.models import OwnerRequests, UserDetails
 from camerasapp.models import Camera
+from threatsapp.models import ThreatDetection
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden
 import os
@@ -42,7 +43,12 @@ def adminDashboard(request):
 
 @login_required
 def ownerDashboard(request):
-    return render(request, 'users/owner_dashboard.html')
+    reviewed_real_alerts = ThreatDetection.objects.filter(review_decision='real').select_related('camera')
+
+    context = {
+        'real_alerts': reviewed_real_alerts,
+    }
+    return render(request, 'users/owner_dashboard.html', context)
 
 
 @login_required
@@ -52,13 +58,17 @@ def viewerDashboard(request):
     if user.details.role != 'viewer':
         return HttpResponseForbidden("Access denied")
 
-    # Get all cameras (active + inactive) assigned to the viewer
-    assigned_cameras = Camera.objects.filter(
-        viewers=user
-    ).order_by('name')
+    assigned_cameras = Camera.objects.filter(viewers=user)
+
+    pending_alerts = ThreatDetection.objects.filter(
+        camera__viewers=user,
+        status='pending',
+        reviewed_by__isnull=True
+    ).order_by('-detected_at')
 
     return render(request, 'users/viewer_dashboard.html', {
-        'assigned_cameras': assigned_cameras
+        'assigned_cameras': assigned_cameras,
+        'alerts': pending_alerts
     })
 
 

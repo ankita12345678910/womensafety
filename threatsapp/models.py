@@ -1,5 +1,6 @@
 from django.db import models
 from django_mysql.models import EnumField
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -27,6 +28,20 @@ class ThreatDetection(models.Model):
     ], default='pending')  # Verification status
     # TRUE if an alert was sent, FALSE otherwise
     alert_triggered = models.BooleanField(default=False)
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='reviewed_threats',
+        help_text="Viewer who reviewed the alert"
+    )
+
+    review_decision = EnumField(choices=[
+        ('real', 'Real'),
+        ('false', 'False'),
+        ('uncertain', 'Uncertain')
+    ], null=True, blank=True)
+
+    escalated = models.BooleanField(default=False)
+    escalated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'threat_detections'

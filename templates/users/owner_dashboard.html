@@ -6,13 +6,68 @@
 
 {% block content %}
 {% load static %}
-<div class="container-fluid bg-light">
-    
-    <h1>This is owner dashboard</h1>
+
+<div class="container-fluid bg-light p-4">
+    <h1>Owner Dashboard</h1>
+
+    <div class="mt-5">
+        <h3 class="text-success">✔️ Reviewed Real Threat Alerts</h3>
+
+        {% if real_alerts %}
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Camera</th>
+                    <th>Detected At</th>
+                    <th>Weapon</th>
+                    <th>Emotion</th>
+                    <th>Gender</th>
+                    <th>Location</th>
+                    <th>Reviewed By</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in real_alerts %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ alert.camera.name }}</td>
+                    <td>{{ alert.detected_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ alert.weapon_type|default:"Unknown" }}</td>
+                    <td>{{ alert.emotion|default:"Unknown" }}</td>
+                    <td>{{ alert.gender|default:"Unknown" }}</td>
+                    <td>{{ alert.latitude }}, {{ alert.longitude }}</td>
+                    <td>
+                        {% if alert.reviewed_by %}
+                        {{ alert.reviewed_by.get_full_name|default:alert.reviewed_by.username }}
+                        {% else %}
+                        Unknown
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if alert.image %}
+                        <img src="/media/threats/{{ alert.image }}" alt="Evidence" class="img-thumbnail"
+                            style="height: 80px; object-fit: cover;">
+                        {% else %}
+                        <img src="{% static 'images/image_not_found.jpg' %}" alt="No Image" class="img-thumbnail"
+                            style="height: 80px;">
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+        {% else %}
+        <div class="alert alert-info">No real threat alerts have been reviewed yet.</div>
+        {% endif %}
+    </div>
 </div>
+
 {% endblock %}
 
 {% block javascript %}
 {{ block.super }}
-<!-- Future JS plugins here -->
+<!-- JS can go here if needed -->
 {% endblock %}

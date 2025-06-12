@@ -9,7 +9,7 @@
     <h2 class="mb-4">Assigned Active Cameras</h2>
 
     {% if assigned_cameras %}
-    {% if active_cameras|length > 1 %}
+    {% if assigned_cameras|length > 1 %}
     <div class="mb-3 text-end">
         <a href="{% url 'view_all_cameras' %}" class="btn btn-primary" target="_blank">View All Cameras</a>
     </div>
@@ -47,5 +47,124 @@
     {% else %}
     <div class="alert alert-info">No active cameras assigned to you.</div>
     {% endif %}
+
+    {% if alerts %}
+    <div class="mt-5">
+        <h3 class="text-danger">🚨 Pending Alerts for Review</h3>
+        <table class="table table-bordered table-warning">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Camera</th>
+                    <th>Detected At</th>
+                    <th>Emotion</th>
+                    <th>Weapon</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for threat in alerts %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ threat.camera.name }}</td>
+                    <td>{{ threat.detected_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ threat.emotion }}</td>
+                    <td>{{ threat.weapon_type|default:"Unknown" }}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm review-btn" data-id="{{ threat.id }}"
+                            data-image="{{ threat.image|default:'' }}" data-weapon="{{ threat.weapon_type }}"
+                            data-emotion="{{ threat.emotion }}" data-gender="{{ threat.gender }}"
+                            data-time="{{ threat.detected_at }}"
+                            data-location="{{ threat.latitude }}, {{ threat.longitude }}">
+                            Review
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Review Modal (Moved outside of conditions to always render) -->
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="reviewForm" method="POST" action="{% url 'submit_review' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Review Threat Alert</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <input type="hidden" name="threat_id" id="modal-threat-id">
+                            <p><strong>Detected At:</strong> <span id="modal-time"></span></p>
+                            <p><strong>Weapon:</strong> <span id="modal-weapon"></span></p>
+                            <p><strong>Emotion:</strong> <span id="modal-emotion"></span></p>
+                            <p><strong>Gender:</strong> <span id="modal-gender"></span></p>
+                            <p><strong>Location:</strong> <span id="modal-location"></span></p>
+
+                            <div class="mt-3">
+                                <label><strong>Review Decision:</strong></label>
+                                <select name="review_decision" class="form-control" required>
+                                    <option value="">-- Choose --</option>
+                                    <option value="real">Real Threat</option>
+                                    <option value="false">False Alarm</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 d-flex align-items-start justify-content-end">
+                            <img id="modal-image" src="" alt="Threat Evidence" class="img-fluid border rounded"
+                                style="max-height: 280px; object-fit: contain;" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('.review-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                // Populate modal fields
+                document.getElementById('modal-threat-id').value = this.dataset.id;
+                document.getElementById('modal-time').innerText = this.dataset.time || "Unknown";
+                document.getElementById('modal-weapon').innerText = this.dataset.weapon || "Unknown";
+                document.getElementById('modal-emotion').innerText = this.dataset.emotion || "Unknown";
+                document.getElementById('modal-gender').innerText = this.dataset.gender || "Unknown";
+                document.getElementById('modal-location').innerText = this.dataset.location || "Unknown";
+
+                // Fix: image is a CharField, so we build the full path manually
+                const filename = this.dataset.image;
+                const img = document.getElementById('modal-image');
+                const imageUrl = filename ? `/media/threats/${filename}` : '/static/images/image_not_found.jpg';
+
+                console.log("Trying to load image:", imageUrl);  // Debug log
+                img.src = imageUrl;
+
+                // Show placeholder if image fails to load
+                img.onerror = function () {
+                    console.error("Failed to load image:", this.src);
+                    this.src = '/static/images/image_not_found.jpg';
+                };
+
+                const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+                modal.show();
+            });
+        });
+    });
+</script>
 {% endblock %}
