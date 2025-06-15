@@ -87,7 +87,8 @@
     {% endif %}
 </div>
 
-<!-- Review Modal (Moved outside of conditions to always render) -->
+<audio id="alertSound" src="/static/audio/alert.mp3" preload="auto"></audio>
+
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -147,15 +148,13 @@
                 document.getElementById('modal-gender').innerText = this.dataset.gender || "Unknown";
                 document.getElementById('modal-location').innerText = this.dataset.location || "Unknown";
 
-                // Fix: image is a CharField, so we build the full path manually
                 const filename = this.dataset.image;
                 const img = document.getElementById('modal-image');
                 const imageUrl = filename ? `/media/threats/${filename}` : '/static/images/image_not_found.jpg';
 
-                console.log("Trying to load image:", imageUrl);  // Debug log
+                console.log("Trying to load image:", imageUrl);
                 img.src = imageUrl;
 
-                // Show placeholder if image fails to load
                 img.onerror = function () {
                     console.error("Failed to load image:", this.src);
                     this.src = '/static/images/image_not_found.jpg';
@@ -165,6 +164,22 @@
                 modal.show();
             });
         });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        {% if messages %}
+            {% for message in messages %}
+                {% if forloop.first %}
+                    Swal.fire({
+                        icon: "{{ message.tags }}",  // 'success', 'error', etc.
+                        title: "{{ message|escapejs }}",
+                        confirmButtonText: "OK"
+                    });
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     });
 </script>
 {% endblock %}

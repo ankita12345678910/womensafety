@@ -60,3 +60,23 @@ def submit_review(request):
 
     return redirect('viewer_dashboard')
 
+@login_required
+def check_new_alerts(request):
+    user = request.user
+    # Get all cameras this user is a viewer of
+    assigned_cameras = user.viewable_cameras.all()  # from Camera.viewers
+
+    # Get the most recent alert from one of the user's cameras
+    latest_threat = ThreatDetection.objects.filter(
+        camera__in=assigned_cameras,
+        status='pending',
+        alert_triggered=True
+    ).order_by('-detected_at').first()
+
+    if latest_threat:
+        return JsonResponse({
+            'alert': True,
+            'camera': latest_threat.camera.name,
+            'time': latest_threat.detected_at.strftime("%Y-%m-%d %H:%M:%S")
+        })
+    return JsonResponse({'alert': False})

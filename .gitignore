@@ -24,6 +24,7 @@ __pycache__/
 # **/static/
 /media/invoices/*
 /media/threats/*
+/media/audio/*
 
 /static/logos/*
 !static/logos/logo.png

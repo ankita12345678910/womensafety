@@ -64,14 +64,31 @@ def viewerDashboard(request):
         camera__viewers=user,
         status='pending',
         reviewed_by__isnull=True
-    ).order_by('-detected_at')
+    ).order_by('-detected_at', '-id')
 
     return render(request, 'users/viewer_dashboard.html', {
         'assigned_cameras': assigned_cameras,
         'alerts': pending_alerts
     })
 
+def check_new_alerts(request):
+    user = request.user
 
+    alert = ThreatDetection.objects.filter(
+        camera__viewers=user,
+        status='pending',
+        reviewed_by__isnull=True
+    ).order_by('-detected_at','-id').first()
+
+    if alert:
+        return JsonResponse({
+            "alert": True,
+            "camera": alert.camera.name,
+            "time": alert.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "alert_id": alert.id
+        })
+    else:
+        return JsonResponse({"alert": False})
 
 def manageUser(request, id=None):
     is_edit = id and int(id) != -1
