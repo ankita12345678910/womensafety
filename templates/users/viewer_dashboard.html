@@ -90,7 +90,22 @@
     {% endif %}
 </div>
 
+<!-- Alert Audio -->
 <audio id="alertSound" src="/static/audio/alert.mp3" preload="auto"></audio>
+
+<audio id="alertSound" src="/static/audio/alert.mp3" preload="auto"></audio>
+<!-- Toast Notification -->
+<div class="position-fixed top-0 end-0 p-3 mt-5" style="z-index: 1080;">
+    <div id="threatToast" class="toast align-items-center text-bg-danger border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-semibold">
+                🚨 <span id="toastMessage">New threat detected!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
@@ -147,6 +162,65 @@
 
 {% block javascript %}
 {{ block.super }}
+
+
+<script>
+    let userHasInteracted = false;
+
+    function unlockAudioPlayback() {
+        if (!userHasInteracted) {
+            const alertSound = document.getElementById("alertSound");
+            if (alertSound) {
+                alertSound.play().then(() => {
+                    alertSound.pause();
+                    alertSound.currentTime = 0;
+                    userHasInteracted = true;
+                    console.log("Audio playback unlocked.");
+                }).catch((e) => {
+                    console.warn("Audio unlock failed:", e);
+                });
+            }
+        }
+    }
+
+    window.addEventListener('click', unlockAudioPlayback);
+    window.addEventListener('keydown', unlockAudioPlayback);
+</script>
+
+<script>
+    let lastAlertTime = null;
+
+    function checkForNewAlerts() {
+        fetch("{% url 'check_new_alerts' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.alert) {
+                    if (data.time !== lastAlertTime) {
+                        lastAlertTime = data.time;
+
+                        const alertSound = document.getElementById("alertSound");
+                        if (alertSound && userHasInteracted) {
+                            alertSound.currentTime = 0;
+                            alertSound.play().catch(error => {
+                                console.warn("Audio playback failed:", error);
+                            });
+                        }
+
+                        const msg = "🚨 New threat from " + data.camera + " at " + data.time;
+                        document.getElementById("toastMessage").textContent = msg;
+
+                        const toast = new bootstrap.Toast(document.getElementById("threatToast"));
+                        toast.show();
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching alerts:', error));
+    }
+
+    setInterval(checkForNewAlerts, 5000);
+    checkForNewAlerts();
+</script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.review-btn').forEach(button => {
@@ -158,46 +232,17 @@
                 document.getElementById('modal-gender').innerText = this.dataset.gender || "Unknown";
                 document.getElementById('modal-location').innerText = this.dataset.location || "Unknown";
 
-                // Image setup
-                const filename = this.dataset.image;
                 const img = document.getElementById('modal-image');
-                const imageUrl = filename ? `/media/threats/${filename}` : '/static/images/image_not_found.jpg';
-                img.src = imageUrl;
-                img.onerror = function () {
-                    console.error("Failed to load image:", this.src);
-                    this.src = '/static/images/image_not_found.jpg';
-                };
+                img.src = this.dataset.image ? `/media/threats/${this.dataset.image}` : '/static/images/image_not_found.jpg';
 
-                // Audio setup
-                const audioFilename = this.dataset.audio;
+                const audioSrc = this.dataset.audio ? `/media/audio/${this.dataset.audio}` : '';
                 const audioElement = document.getElementById('modal-audio');
-                const audioSource = audioElement.querySelector('source');
-                const audioUrl = audioFilename ? `/media/audio/${audioFilename}` : '';
-                audioSource.src = audioUrl;
-                audioElement.load(); // Important!
+                audioElement.querySelector('source').src = audioSrc;
+                audioElement.load();
 
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
-                modal.show();
+                new bootstrap.Modal(document.getElementById('reviewModal')).show();
             });
         });
-    });
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        {% if messages %}
-            {% for message in messages %}
-                {% if forloop.first %}
-                    Swal.fire({
-                        icon: "{{ message.tags }}",
-                        title: "{{ message|escapejs }}",
-                        confirmButtonText: "OK"
-                    });
-                {% endif %}
-            {% endfor %}
-        {% endif %}
     });
 </script>
 {% endblock %}
