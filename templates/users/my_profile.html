@@ -1,0 +1,96 @@
+{% extends "user_base.html" %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <h3 class="mb-4 text-center">My Profile</h3>
+
+            <div class="card shadow rounded-4 p-4">
+                <form method="POST" id="update-my-profile">
+                    {% csrf_token %}
+
+                    <!-- First Name -->
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ request.user.first_name }}">
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ request.user.last_name }}">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ request.user.email }}">
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control" value="{{ request.user.details.phone_number }}">
+                    </div>
+
+                    <!-- Address -->
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="2">{{ request.user.details.address }}</textarea>
+                    </div>
+
+                    <!-- Optional Password Update -->
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control">
+                        <div class="form-text">Leave blank to keep current password</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save me-1"></i>Update
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    $(document).ready(function () {
+        $('#update-my-profile').on('submit', function (event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+            $.ajax({
+                url: "{% url 'my_profile' %}",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: response.message
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops!',
+                        text: 'Something went wrong. Please try again.'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

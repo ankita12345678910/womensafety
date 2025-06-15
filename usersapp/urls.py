@@ -18,4 +18,6 @@ urlpatterns = [
     path('ajax/update/owner/status/<int:id>/<str:status>/', views.updateOwnerStatus, name='ajax_update_owner_status'),
     path('list/users', views.listUsers, name='list_users'),
     path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
+    path('my/profile/', views.myProfile, name='my_profile'),
+    
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

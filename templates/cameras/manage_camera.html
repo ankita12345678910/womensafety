@@ -108,8 +108,49 @@
 {% block javascript %}
 {{ block.super }}
 <script>
-    $(document).ready(function () {
-    // Open modal
+$(document).ready(function () {
+    // === 1. Handle Add/Edit Camera Form Submission ===
+    $('#manage_camera_form').on('submit', '#camera-form', function (e) {
+        e.preventDefault();
+
+        const form = $(this);
+        const url = window.location.href;
+        const data = form.serialize();
+
+        $('body #ajax-loader')?.fadeIn();
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: data,
+            success: function (response) {
+                $('body #ajax-loader')?.fadeOut();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: response.message,
+                    confirmButtonColor: '#3085d6'
+                });
+
+                // If it's an add form, re-render it blank
+                if (response.html) {
+                    $('#manage_camera_form').html(response.html);
+                }
+            },
+            error: function (xhr) {
+                $('body #ajax-loader')?.fadeOut();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: xhr.responseJSON?.message || 'Something went wrong. Please try again!',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    });
+
+    // === 2. Open Viewer Modal ===
     $('#manage-user-btn').on('click', function () {
         const cameraId = $(this).data('camera-id');
         $('#addViewerModal').data('camera-id', cameraId);
@@ -121,10 +162,11 @@
         });
     });
 
-    // Submit add viewer form
+    // === 3. Submit Add Viewer Form ===
     $('body').on('submit', '#user-form', function (e) {
         e.preventDefault();
         $('body #ajax-loader').fadeIn();
+
         const cameraId = $('#addViewerModal').data('camera-id');
         const data = $(this).serialize() + `&camera_id=${cameraId}`;
 
@@ -136,14 +178,11 @@
                 $('body #ajax-loader').fadeOut();
                 Swal.fire({
                     icon: 'success',
-                    title: 'Success',
+                    title: 'Viewer Added',
                     text: response.message,
                     confirmButtonColor: '#3085d6'
                 }).then(() => {
-                    // Preserve tab state before reload
                     localStorage.setItem('activeTab', '#viewers');
-
-                    // Reload page
                     location.reload();
                 });
             },
@@ -159,13 +198,14 @@
         });
     });
 
-    // Activate stored tab on page load
+    // === 4. Restore Tab After Page Reload ===
     const activeTab = localStorage.getItem('activeTab');
     if (activeTab) {
         const tab = new bootstrap.Tab(document.querySelector(activeTab + '-tab'));
         tab.show();
-        localStorage.removeItem('activeTab'); // Clear after applying
+        localStorage.removeItem('activeTab');
     }
 });
 </script>
+
 {% endblock %}

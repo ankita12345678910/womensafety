@@ -374,3 +374,38 @@ def delete_user(request, user_id):
     user.is_active = False
     user.save()
     return JsonResponse({'success': True})
+
+@login_required
+def myProfile(request):
+    """Handles profile view and update without profile picture"""
+    user = request.user
+
+    if request.method == 'POST':
+        fname = request.POST.get('first_name')
+        lname = request.POST.get('last_name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
+
+        # Update basic user fields
+        user.first_name = fname
+        user.last_name = lname
+        user.email = email
+
+        if password:
+            user.set_password(password)
+
+        user.save()
+
+        # Update extended user details
+        user.details.phone = phone
+        user.details.address = address
+        user.details.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Profile updated successfully!'})
+
+    return render(request, 'users/my_profile.html', {
+        'media_url': settings.MEDIA_URL,
+    })
+

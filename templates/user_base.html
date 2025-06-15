@@ -12,11 +12,40 @@
     <!-- Optional: For Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     {% endblock %}
+    <style>
+        body {
+            padding-top: 70px;
+            /* Offset for fixed navbar */
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 40px;
+            /* Offset for navbar */
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 40px);
+            background-color: rgb(16, 38, 48);
+            overflow-y: auto;
+            z-index: 1020;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 1.5rem;
+        }
+
+        .nav-link.active {
+            color: black !important;
+            background-color: rgb(53, 243, 224) !important;
+        }
+    </style>
 </head>
 
 <body>
     <!-- Navbar Section -->
-    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: rgb(16, 37, 47);">
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top"
+        style="background-color: rgb(16, 37, 47); z-index: 1030;">
         <div class="container-fluid">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,9 +64,9 @@
                         {% if user.is_authenticated %}
                         <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle"
                             id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://github.com/mdo.png" alt="" width="32" height="32"
-                                class="rounded-circle me-2">
-                            <strong style="color: white;">{{ request.user.first_name }} {{ request.user.last_name}}</strong>
+
+                            <strong style="color: white;">Welcome {{ request.user.first_name }}
+                                {{request.user.last_name}}</strong>
                         </a>
                         <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
                             <li><a class="dropdown-item" href="#">New project...</a></li>
@@ -66,128 +95,64 @@
         </div>
     </nav>
 
-    <div class="d-flex">
-        <!-- Sidebar Section -->
-        <div class="flex-shrink-0 p-3 shadow-lg" style="width: 250px; height: 100vh;background-color: rgb(16, 38, 48);">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-                <span class="fs-4" style="color: white;">Welcome</span>
-            </a>
-            <hr>
-            <ul class="nav nav-pills flex-column mb-auto">
-                
-            
-                {% if user.details.role == 'admin' %}
-                <li>
-                    <a href="{% url 'admin_dashboard' %}" class="nav-link link-light">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                </li>
-                    <li>
-                        <a href="{% url 'list_request' %}" class="nav-link link-light">
-                            <i class="fas fa-user-check me-2"></i> Requested Owner
-                        </a>
-                    </li>
-                    <li>
-                        <span class="nav-link link-light">
-                            <i class="fas fa-users-cog me-2"></i> Manage User
-                        </span>
-                        <ul class="nav flex-column ms-3">
-                            <li class="nav-item">
-                                <a href="{% url 'manage_user' -1 %}" class="nav-link link-light">
-                                    <i class="fas fa-user me-2"></i> Add User
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'list_users' %}" class="nav-link link-light">
-                                    <i class="fas fa-list me-2"></i> List User
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                {% elif user.details.role == 'owner' %}
-                <li>
-                    <a href="{% url 'owner_dashboard' %}" class="nav-link link-light">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                </li>
-                    <li>
-                        <span class="nav-link link-light">
-                            <i class="fas fa-video me-2"></i> Manage Camera
-                        </span>
-                        <ul class="nav flex-column ms-3">
-                            <li class="nav-item">
-                                <a href="{% url 'manage_camera' -1 %}" class="nav-link link-light">
-
-                                    <i class="fas fa-plus me-2"></i> Add Camera
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'list_cameras' %}" class="nav-link link-light">
-                                    <i class="fas fa-list me-2"></i> List Camera
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- <li>
-                        <a href="#" class="nav-link link-light">
-                            <i class="fas fa-user-plus me-2"></i> Add Viewers
-                        </a>
-                    </li> -->
-               
-                {% elif user.details.role == 'viewer' %}
-                <li>
-                    <a href="{% url 'viewer_dashboard' %}" class="nav-link link-light">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                </li>
-                    <li>
-                        <span class="nav-link link-light">
-                            <i class="fas fa-video me-2"></i>camera
-                        </span>
-                        <ul class="nav flex-column ms-3">
-                            <li class="nav-item">
-                                <a href="#" class="nav-link link-light">
-
-                                    <i class="fas fa-plus me-2"></i> Monitor cameras
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'manage_threats' %}" class="nav-link link-light">
-                                    <i class="fas fa-list me-2"></i> All threats
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- <li>
-                        <a href="#" class="nav-link link-light">
-                            <i class="fas fa-user-plus me-2"></i> Add Viewers
-                        </a>
-                    </li> -->
-                {% endif %}
-            
-                <li>
-                    <a href="#" class="nav-link link-light">
-                        <i class="fas fa-cogs me-2"></i> Settings
-                    </a>
-                </li>
-            </ul>
-            
-            <hr>
-        </div>
-
-        <!-- Main Content Section -->
-        <div class="flex-grow-1 p-4">
-            {% block content %}{% endblock %}
-        </div>
+    <div class="sidebar p-3 shadow-lg">
+        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <span class="fs-4" style="color: white;">Welcome</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            {% if user.details.role == 'admin' %}
+            <li><a href="{% url 'admin_dashboard' %}" class="nav-link link-light">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+            <li><a href="{% url 'list_request' %}" class="nav-link link-light">
+                    <i class="fas fa-user-check me-2"></i> Requested Owner</a></li>
+            <li><span class="nav-link link-light">
+                    <i class="fas fa-users-cog me-2"></i> Manage User</span>
+                <ul class="nav flex-column ms-3">
+                    <li><a href="{% url 'manage_user' -1 %}" class="nav-link link-light">
+                            <i class="fas fa-user me-2"></i> Add User</a></li>
+                    <li><a href="{% url 'list_users' %}" class="nav-link link-light">
+                            <i class="fas fa-list me-2"></i> List User</a></li>
+                </ul>
+            </li>
+            {% elif user.details.role == 'owner' %}
+            <li><a href="{% url 'owner_dashboard' %}" class="nav-link link-light">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+            <li><span class="nav-link link-light">
+                    <i class="fas fa-video me-2"></i> Manage Camera</span>
+                <ul class="nav flex-column ms-3">
+                    <li><a href="{% url 'manage_camera' -1 %}" class="nav-link link-light">
+                            <i class="fas fa-plus me-2"></i> Add Camera</a></li>
+                    <li><a href="{% url 'list_cameras' %}" class="nav-link link-light">
+                            <i class="fas fa-list me-2"></i> List Camera</a></li>
+                </ul>
+            </li>
+            {% elif user.details.role == 'viewer' %}
+            <li><a href="{% url 'viewer_dashboard' %}" class="nav-link link-light">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+            <li><span class="nav-link link-light">
+                    <i class="fas fa-video me-2"></i> Camera</span>
+                <ul class="nav flex-column ms-3">
+                    <li><a href="#" class="nav-link link-light">
+                            <i class="fas fa-plus me-2"></i> Monitor Cameras</a></li>
+                    <li><a href="{% url 'manage_threats' %}" class="nav-link link-light">
+                            <i class="fas fa-list me-2"></i> All Threats</a></li>
+                </ul>
+            </li>
+            {% endif %}
+            <li>
+                <a href="{% url 'my_profile' %}" class="nav-link link-light">
+                    <i class="fas fa-user me-2"></i>Profile
+                </a>
+            </li>
+        </ul>
+        <hr>
     </div>
 
-    <style>
-        .nav-link.active {
-            color: black !important;
-            background-color: rgb(53, 243, 224) !important;
-        }
-    </style>
-
+    <!-- Main Content Section -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
 
     {% block javascript %}
     <!-- Bootstrap 5.3 JS -->
@@ -201,16 +166,17 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     {% endblock %}
-    <div id="ajax-loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-     background-color: rgba(0, 0, 0, 0.5); z-index: 1050; display: none; align-items: center; justify-content: center;">
 
-    <div class="text-center">
-        <div class="spinner-border text-light" style="width: 4rem; height: 4rem;" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <div id="ajax-loader"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); z-index: 1050; display: none; align-items: center; justify-content: center;">
+        <div class="text-center">
+            <div class="spinner-border text-light" style="width: 4rem; height: 4rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="text-light mt-3 fw-semibold">Processing...</div>
         </div>
-        <div class="text-light mt-3 fw-semibold">Processing...</div>
     </div>
-</div>
 </body>
 
 </html>

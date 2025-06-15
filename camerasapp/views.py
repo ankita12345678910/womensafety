@@ -14,7 +14,7 @@ import subprocess
 
 @login_required(login_url='login')
 def manageCamera(request, id=None):
-    # Check if it's an edit (id is provided)
+    # Check if it's an edit (id is provided and not -1)
     is_edit = id is not None and int(id) != -1
     camera = get_object_or_404(
         Camera, id=id, owner=request.user) if is_edit else None
@@ -32,8 +32,7 @@ def manageCamera(request, id=None):
             camera.save()
 
             return JsonResponse({
-                'message': 'Camera updated successfully.',
-                'redirect_url': None  # Adjust this URL as needed
+                'message': 'Camera updated successfully.'
             })
 
         else:
@@ -45,21 +44,19 @@ def manageCamera(request, id=None):
                 location=location
             )
 
-            # Optionally render the form after creating a new camera
+            # Render the updated form HTML (blank form for adding new camera)
             html = render_to_string("cameras/manage_camera_form_inner.html", {
-                'camera': None,  # no camera since it's a new one
+                'camera': None,
                 'button_text': 'Add'
             }, request=request)
 
             return JsonResponse({
                 'message': 'Camera added successfully.',
-                'html': html  # Return the updated form for re-rendering
+                'html': html
             })
 
-    # If GET request: show the form
+    # If GET request, render form normally
     button_text = "Update" if is_edit else "Add"
-
-    # Render the form
     return render(request, "cameras/manage_camera.html", {
         'camera': camera,
         'button_text': button_text
